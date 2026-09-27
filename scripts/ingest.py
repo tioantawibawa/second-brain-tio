@@ -308,6 +308,128 @@ def process_file(file_path: Path, dry_run: bool = False, keep_raw: bool = False,
         file_path.rename(dest_archive)
         print(f"[+] Archived raw file to: {dest_archive.relative_to(REPO_ROOT)}")
 
+    append_audit_log("INGEST", str(target_file.relative_to(REPO_ROOT)), f"Ingested {file_path.name} to {target_rel_folder}")
+    return True
+
+def append_audit_log(op_type: str, target: str, description: str):
+    """Appends an entry to log.md in accordance with agents.md."""
+    log_file = REPO_ROOT / "log.md"
+    now_str = datetime.now().strftime("%Y-%m-%d %H:%M")
+    entry_line = f"| {now_str} | {op_type} | `{target}` | {description} |\n"
+    
+    if not log_file.exists():
+        log_file.write_text("# System Audit & Compounding Knowledge Log\n\n| Timestamp | Tipe Operasi | Target File / Entitas | Deskripsi Ringkas Tindakan |\n| :--- | :--- | :--- | :--- |\n", encoding="utf-8")
+    
+    with open(log_file, "a", encoding="utf-8") as f:
+        f.write(entry_line)
+    print(f"[+] Appended audit record to log.md ({op_type})")
+
+def update_index_catalog(topic_title: str, topic_slug: str, category: str = "Konsep"):
+    """Adds a wiki concept to index.md if not already present."""
+    index_file = REPO_ROOT / "index.md"
+    if not index_file.exists():
+        return
+        
+    content = index_file.read_text(encoding="utf-8")
+    entry_link = f"[[{topic_slug}|{topic_title}]]"
+    if entry_link in content or f"[[{topic_slug}]]" in content:
+        return
+
+    # Append under section 1
+    target_section = "## 1. Konsep & Arsitektur Sistem (`wiki/`)"
+    if target_section in content:
+        replacement = f"{target_section}\n- {entry_link} (`{datetime.now().strftime('%Y-%m-%d')}`)"
+        content = content.replace(target_section, replacement, 1)
+        index_file.write_text(content, encoding="utf-8")
+        print(f"[+] Updated index.md with wiki concept: {entry_link}")
+
+def ingest_raw_to_wiki(file_path: Path, dry_run: bool = False) -> bool:
+    """Ingests a file from raw/ into wiki/ adhering to agents.md PROTOKOL 1."""
+    if not file_path.exists() or file_path.is_dir():
+        return False
+        
+    print(f"\n[*] [PROTOKOL 1 INGEST] Processing raw clip: {file_path.name} ...")
+    raw_content = file_path.read_text(encoding="utf-8")
+    if not raw_content.strip():
+        return False
+
+    now_str = datetime.now().strftime("%Y-%m-%d")
+    clean_stem = slugify(file_path.stem)
+    
+    # Extract metadata using ai_engine
+    try:
+        import ai_engine
+        data, used_model = ai_engine.parse_text_with_ai(raw_content, file_path.name)
+        print(f"[*] Processed using AI model: {used_model}")
+    except Exception as e:
+        print(f"[!] AI parsing fallback ({e}).")
+        data = local_heuristic_parse(raw_content, file_path.name)
+
+    title = data.get("title", file_path.stem.replace("-", " ").title())
+    slug = data.get("slug", clean_stem)
+    source_processed_path = f"raw/processed/{file_path.name}"
+    
+    # Build wiki page format with strict agents.md YAML frontmatter
+    wiki_content = f"""---
+title: "{title}"
+source_title: "{file_path.name}"
+source_url: ""
+author: "Ingested via Second Brain"
+ingest_date: {now_str}
+tags:
+  - wiki
+  - knowledge-compilation
+links:
+  - "[[{source_processed_path}]]"
+"""
+    for entity in data.get("key_entities", []):
+        wiki_content += f'  - "{entity}"\n'
+    wiki_content += f"""---
+
+# {title}
+
+## 1. Core Synthesis & Key Insights
+{chr(10).join(f"- {ci}" for ci in data.get("core_insights", ["Ide sintesis utama."]))}
+
+---
+
+## 2. Tools, Arsitektur & Entitas
+| Entitas / Tool | Tipe | Relevansi |
+| :--- | :--- | :--- |
+"""
+    for entity in data.get("key_entities", []):
+        wiki_content += f"| {entity} | Wiki Concept | Referensi silang |\n"
+
+    wiki_content += f"""
+---
+
+## 3. Actionable Takeaways
+{chr(10).join(data.get("action_items", ["- [ ] Evaluasi relevansi konsep"]))}
+
+---
+
+## 4. Provenance & Original Source Reference
+- File Asli: `[[{source_processed_path}]]`
+- Waktu Ingest: `{datetime.now().strftime("%Y-%m-%d %H:%M")}`
+"""
+    
+    target_wiki_file = REPO_ROOT / "wiki" / f"{slug}.md"
+    if dry_run:
+        print(f"[DRY-RUN] Target: {target_wiki_file}")
+        print(wiki_content)
+        return True
+
+    target_wiki_file.write_text(wiki_content, encoding="utf-8")
+    print(f"[+] Created wiki page: {target_wiki_file.relative_to(REPO_ROOT)}")
+
+    # Update index.md & log.md
+    update_index_catalog(title, slug)
+    append_audit_log("INGEST", f"wiki/{slug}.md", f"Extracted from {file_path.name} to wiki/")
+
+    # Move to raw/processed/
+    dest_processed = REPO_ROOT / "raw" / "processed" / file_path.name
+    file_path.rename(dest_processed)
+    print(f"[+] Moved source file to: {dest_processed.relative_to(REPO_ROOT)}")
     return True
 
 def main():
@@ -315,13 +437,23 @@ def main():
     parser = argparse.ArgumentParser(description="Second Brain Ingest Engine (Deliverable-First & Gemini AI-powered)")
     parser.add_argument("--file", "-f", help="Path to single markdown or text file in inbox_raw/")
     parser.add_argument("--all", "-a", action="store_true", help="Process all files currently in inbox_raw/")
+    parser.add_argument("--raw", "-r", action="store_true", help="Process all raw files in raw/ into wiki/ (agents.md Protocol 1)")
     parser.add_argument("--dry-run", "-d", action="store_true", help="Print result to terminal without writing or moving files")
     parser.add_argument("--keep-raw", action="store_true", help="Do not move raw files to .archive after ingest")
     parser.add_argument("--target", "-t", help="Force target subfolder (e.g. in_motion/core_work, in_motion/side_builder, lattices/mental_models)")
 
     args = parser.parse_args()
 
-    if args.file:
+    if args.raw:
+        raw_dir = REPO_ROOT / "raw"
+        items = [f for f in raw_dir.iterdir() if f.is_file() and not f.name.startswith(".")]
+        if not items:
+            print("[*] raw/ is empty. No clips or transcripts to ingest.")
+            return
+        print(f"[*] Found {len(items)} file(s) in raw/...")
+        for it in items:
+            ingest_raw_to_wiki(it, dry_run=args.dry_run)
+    elif args.file:
         file_path = Path(args.file)
         if not file_path.is_absolute():
             file_path = (REPO_ROOT / file_path).resolve()

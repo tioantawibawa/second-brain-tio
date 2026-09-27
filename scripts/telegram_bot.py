@@ -424,6 +424,193 @@ def handle_status(chat_id: int):
     )
     send_message(chat_id, reply)
 
+def handle_journal(chat_id: int, raw_text: str):
+    """Processes a reflection journal entry adhering to agents.md PROTOKOL 3."""
+    journal_content = raw_text.replace("/journal", "", 1).strip()
+    if not journal_content:
+        send_message(chat_id, "ℹ️ Format: `/journal [isi refleksi atau evaluasi harian]`")
+        return
+        
+    send_message(chat_id, "📝 *Menyimpan dan menganalisis jurnal harian...*")
+    today_iso = datetime.now().strftime("%Y-%m-%d")
+    
+    # Generate short title and summary
+    first_line = journal_content.splitlines()[0]
+    words = re.findall(r"\w+", first_line)[:5]
+    short_slug = "-".join(w.lower() for w in words) if words else "harian"
+    short_title = " ".join(words).title() if words else "Refleksi Harian"
+    
+    filename = f"{today_iso}_{short_slug}.md"
+    target_path = REPO_ROOT / "journal" / filename
+    
+    md_content = f"""---
+title: "{short_title}"
+date: {today_iso}
+type: journal
+tags:
+  - reflection
+  - daily-pulse
+links:
+  - "[[journal/index]]"
+---
+
+# {short_title}
+
+## 1. Refleksi & Catatan Harian
+{journal_content}
+
+---
+
+## 2. Analisis & Evaluasi Pola
+- Waktu Pencatatan: `{datetime.now().strftime("%Y-%m-%d %H:%M")}`
+"""
+    target_path.write_text(md_content, encoding="utf-8")
+    
+    # Update journal/index.md
+    j_index = REPO_ROOT / "journal" / "index.md"
+    summary_1_sentence = journal_content.replace("\n", " ").strip()[:100] + "..."
+    j_entry = f"| {today_iso} | [[{filename[:-3]}\\|{short_title}]] | {summary_1_sentence} |\n"
+    if j_index.exists():
+        with open(j_index, "a", encoding="utf-8") as f:
+            f.write(j_entry)
+            
+    # Append log.md
+    ingest.append_audit_log("JOURNAL", f"journal/{filename}", f"Recorded reflection: {short_title}")
+    
+    send_message(
+        chat_id,
+        f"✅ *Jurnal Tersimpan!*\n\n"
+        f"📁 `journal/{filename}`\n"
+        f"📖 *Indeks Terdaftar:* `journal/index.md`\n"
+        f"🔍 Gunakan `/read_{filename[:-3].replace('-', '_')}` untuk membaca ulang."
+    )
+
+def handle_crm(chat_id: int, raw_text: str):
+    """Processes a CRM profile entry adhering to agents.md PROTOKOL 4."""
+    crm_text = raw_text.replace("/crm", "", 1).strip()
+    if not crm_text or "-" not in crm_text:
+        send_message(chat_id, "ℹ️ Format: `/crm [Nama Lengkap] - [Bio / Peran / Konteks]`\nContoh: `/crm Tiago Forte - Penulis metode PARA & Building a Second Brain`")
+        return
+        
+    parts = crm_text.split("-", 1)
+    name = parts[0].strip()
+    bio = parts[1].strip()
+    
+    clean_name_file = name.replace(" ", "-") + ".md"
+    target_path = REPO_ROOT / "crm" / clean_name_file
+    today_iso = datetime.now().strftime("%Y-%m-%d")
+    
+    md_content = f"""---
+name: "{name}"
+role: "Kontak / Jaringan Profesional"
+interaction_last_date: {today_iso}
+tags:
+  - crm
+  - professional-network
+links:
+  - "[[crm/index]]"
+---
+
+# {name}
+
+## 1. Bio Singkat & Konteks Relasi
+{bio}
+
+---
+
+## 2. Log Interaksi & Catatan
+- **{today_iso}**: Profil dicatat via Telegram Second Brain Gateway.
+"""
+    target_path.write_text(md_content, encoding="utf-8")
+    
+    # Update crm/index.md
+    crm_index = REPO_ROOT / "crm" / "index.md"
+    crm_entry = f"| {name} | [[{clean_name_file[:-3]}]] | {bio[:80]} | `[[network]]` |\n"
+    if crm_index.exists():
+        with open(crm_index, "a", encoding="utf-8") as f:
+            f.write(crm_entry)
+            
+    ingest.append_audit_log("CRM", f"crm/{clean_name_file}", f"Added contact profile for {name}")
+    
+    send_message(
+        chat_id,
+        f"👤 *Profil CRM Berhasil Dibuat!*\n\n"
+        f"📌 *Nama:* {name}\n"
+        f"📁 `crm/{clean_name_file}`\n"
+        f"📋 Tercatat di `crm/index.md`."
+    )
+
+def handle_compounding_query(chat_id: int, question: str):
+    """Executes grounded QA and compounds new reusable insights into wiki/."""
+    if not question.strip():
+        send_message(chat_id, "ℹ️ Format: `/query [pertanyaan analitis atau sintesis arsitektur]`")
+        return
+        
+    send_message(chat_id, f"🧠 *Menganalisis vault Second Brain untuk:* `{question}`...")
+    
+    vault = graph_index.scan_vault()
+    notes = vault["notes"]
+    query_tokens = graph_index.tokenize(question)
+    
+    # Find relevant context
+    scored = []
+    for path, n in notes.items():
+        score = sum(1 for qt in query_tokens if qt in n["title"].lower() or qt in n["body"].lower())
+        if score > 0:
+            scored.append((score, n))
+    scored.sort(key=lambda x: x[0], reverse=True)
+    
+    context_text = "\n\n".join([f"--- Catatan: {n['title']} (File: {n['path']}) ---\n{n['body'][:600]}" for _, n in scored[:4]])
+    
+    prompt = f"""
+Pengguna mengajukan pertanyaan analitis berikut:
+"{question}"
+
+Gunakan konteks catatan Second Brain berikut untuk menjawab secara grounded:
+\"\"\"
+{context_text}
+\"\"\"
+
+Instruksi:
+1. Jawab secara padat, berbasis fakta dalam catatan di atas, sertakan rujukan wikilinks [[slug]].
+2. Apakah pertanyaan ini menghasilkan sintesis konsep baru yang bernilai pakai ulang?
+Keluarkan JSON:
+{{
+  "answer": "Jawaban lengkap untuk pengguna",
+  "is_new_synthesis": true/false,
+  "synthesis_title": "Judul Konsep jika is_new_synthesis true",
+  "synthesis_slug": "kebab-case-slug",
+  "synthesis_markdown": "Konten Markdown untuk wiki/"
+}}
+"""
+    try:
+        import ai_engine
+        gemini_key = os.getenv("GEMINI_API_KEY")
+        preferred = os.getenv("GEMINI_MODEL", "gemini-3.8-flash")
+        payload = {
+            "contents": [{"parts": [{"text": prompt}]}],
+            "generationConfig": {"temperature": 0.2, "responseMimeType": "application/json"}
+        }
+        res, model = ai_engine.call_gemini_with_fallback(payload, gemini_key, preferred)
+        
+        answer = res.get("answer", "Jawaban tidak dapat diformulasikan.")
+        send_message(chat_id, f"💡 *Jawaban Ter-grounding:* (via `{model}`)\n\n{answer}")
+        
+        # PROTOKOL 2: Auto-compound reusable synthesis into wiki/
+        if res.get("is_new_synthesis") and res.get("synthesis_slug"):
+            s_slug = res.get("synthesis_slug")
+            s_title = res.get("synthesis_title", s_slug.replace("-", " ").title())
+            s_file = REPO_ROOT / "wiki" / f"{s_slug}.md"
+            s_content = res.get("synthesis_markdown", f"# {s_title}\n\n{answer}")
+            s_file.write_text(s_content, encoding="utf-8")
+            
+            ingest.update_index_catalog(s_title, s_slug)
+            ingest.append_audit_log("QUERY_COMPOUND", f"wiki/{s_slug}.md", f"Auto-compounded new synthesis from query: {question}")
+            send_message(chat_id, f"🌱 *Compounding Insight Baru:* Disimpan ke `wiki/{s_slug}.md` dan dicatat di `index.md`!")
+            
+    except Exception as e:
+        send_message(chat_id, f"⚠️ Gagal memproses query analitis: `{e}`")
+
 def run_bot():
     """Main polling loop."""
     if not BOT_TOKEN:
@@ -466,14 +653,23 @@ def run_bot():
                 if text.startswith("/start"):
                     send_message(
                         chat_id,
-                        "🧠 *Second Brain Telegram Gateway Aktif!*\n\n"
+                        "🧠 *Second Brain Telegram Gateway (agents.md Compliant)*\n\n"
                         "Perintah yang Tersedia:\n"
-                        "1. *Kirim Teks Ide/Voice Note* -> Otomatis di-ingest & dipetakan.\n"
-                        "2. `/list` -> Menampilkan daftar semua catatan.\n"
-                        "3. `/read <nama_catatan>` -> Membaca isi lengkap catatan.\n"
-                        "4. `/search <kata_kunci>` -> Pencarian semantik lokal via BM25.\n"
-                        "5. `/status` -> Ringkasan statistik deliverable & backlog."
+                        "1. *Kirim Teks/Voice Note* -> Otomatis di-ingest.\n"
+                        "2. `/journal <refleksi>` -> Catat jurnal harian ke `journal/`.\n"
+                        "3. `/crm <Nama> - <Bio>` -> Catat profil kontak ke `crm/`.\n"
+                        "4. `/query <pertanyaan>` -> Tanya jawab ter-grounding & auto-compound ke `wiki/`.\n"
+                        "5. `/list` -> Daftar catatan dengan link klik.\n"
+                        "6. `/read <nama_catatan>` -> Baca isi lengkap catatan.\n"
+                        "7. `/search <query>` -> Pencarian semantik BM25.\n"
+                        "8. `/status` -> Statistik vault."
                     )
+                elif text.startswith("/journal"):
+                    handle_journal(chat_id, text)
+                elif text.startswith("/crm"):
+                    handle_crm(chat_id, text)
+                elif text.startswith("/query") or text.startswith("/ask"):
+                    handle_compounding_query(chat_id, text.replace("/query", "").replace("/ask", "").strip())
                 elif text.startswith("/read") or text.startswith("/baca"):
                     handle_read(chat_id, text)
                 elif text.startswith("/list") or text.startswith("/recent"):
@@ -490,6 +686,21 @@ def run_bot():
                 elif "audio" in message:
                     mime = message["audio"].get("mime_type", "audio/mp3")
                     handle_voice_note(chat_id, message["audio"]["file_id"], mime_type=mime)
+                elif "document" in message:
+                    # Save document to raw/ for PROTOKOL 1 INGEST
+                    doc = message["document"]
+                    f_id = doc["file_id"]
+                    f_name = doc.get("file_name", f"doc_{int(time.time())}.txt")
+                    send_message(chat_id, f"📥 *Menerima dokumen:* `{f_name}`. Memproses ke `raw/`...")
+                    file_bytes, _ = download_file(f_id)
+                    if file_bytes:
+                        raw_save = REPO_ROOT / "raw" / f_name
+                        raw_save.write_bytes(file_bytes)
+                        success = ingest.ingest_raw_to_wiki(raw_save)
+                        if success:
+                            send_message(chat_id, f"✅ *Dokumen `{f_name}` berhasil diekstrak ke `wiki/` & diarsipkan ke `raw/processed/`!*")
+                        else:
+                            send_message(chat_id, f"⚠️ Gagal mengekstrak dokumen `{f_name}`.")
                     
         except KeyboardInterrupt:
             print("\n[*] Bot stopped by user.")

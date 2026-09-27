@@ -1,7 +1,7 @@
 # Knowledge Network Index & Central MOC
 
 > Auto-generated network map & backlink connectivity matrix.
-> Last updated: `2026-09-27 23:25` | Total Notes: `14`
+> Last updated: `2026-09-27 23:31` | Total Notes: `20`
 
 ---
 
@@ -46,18 +46,33 @@
 
 | Target Konsep | Dirujuk Oleh |
 | :--- | :--- |
+| `[[...]]` | [[agents]], [[identity-debugging-walk-protocol]] |
 | `[[wikilinks]]` | [[README]], [[identity-debugging-walk-protocol]] |
+| `[[relevant-wiki-topic]]` | [[agents]] |
+| `[[related-wiki-concept]]` | [[agents]] |
+| `[[raw/processed/source-file]]` | [[agents]] |
+| `[[wiki-topic-of-expertise]]` | [[agents]] |
+| `[[nama-catatan]]` | [[agents]] |
+| `[[raw/processed/...]]` | [[agents]] |
+| `[[YYYY-MM-DD_judul-singkat\]]` | [[agents]] |
+| `[[proyek-kolaborasi]]` | [[agents]] |
+| `[[topik-keahlian]]` | [[agents]] |
 | `[[target-note-slug]]` | [[RULES]] |
 | `[[unbuilt-feature]]` | [[RULES]] |
+| `[[topik]]` | [[index]] |
+| `[[raw/processed/langgraph-agentic-patterns.md]]` | [[langgraph-multi-agent-orchestration-patterns]] |
+| `[[Checkpoint Saver]]` | [[langgraph-multi-agent-orchestration-patterns]] |
+| `[[StateGraph]]` | [[langgraph-multi-agent-orchestration-patterns]] |
+| `[[LangGraph]]` | [[langgraph-multi-agent-orchestration-patterns]] |
+| `[[Harrison Chase]]` | [[langgraph-multi-agent-orchestration-patterns]] |
 | `[[INDEX]]` | [[weekly-pulse]] |
-| `[[...]]` | [[identity-debugging-walk-protocol]] |
-| `[[gemini-playbook]]` | [[raw-agent-rag-dump]] |
-| `[[fastapi-playbook]]` | [[raw-agent-rag-dump]] |
-| `[[rag-playbook]]` | [[raw-agent-rag-dump]] |
 | `[[agent-playbook]]` | [[raw-agent-rag-dump]] |
-| `[[git-playbook]]` | [[raw-agent-rag-dump]] |
-| `[[python-playbook]]` | [[raw-agent-rag-dump]] |
 | `[[vps-playbook]]` | [[raw-agent-rag-dump]] |
+| `[[git-playbook]]` | [[raw-agent-rag-dump]] |
+| `[[gemini-playbook]]` | [[raw-agent-rag-dump]] |
+| `[[rag-playbook]]` | [[raw-agent-rag-dump]] |
+| `[[fastapi-playbook]]` | [[raw-agent-rag-dump]] |
+| `[[python-playbook]]` | [[raw-agent-rag-dump]] |
 | `[[headless-browser-automation]]` | [[ai-agent-coupon-promo-indonesia]] |
-| `[[coupon-agent-v1]]` | [[ai-agent-coupon-promo-indonesia]] |
 | `[[ecommerce-validator]]` | [[ai-agent-coupon-promo-indonesia]] |
+| `[[coupon-agent-v1]]` | [[ai-agent-coupon-promo-indonesia]] |
