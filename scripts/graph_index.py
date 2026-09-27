@@ -62,7 +62,7 @@ def scan_vault() -> dict:
         # Exclude ignored dirs
         if any(ex in md_file.parts for ex in EXCLUDE_DIRS):
             continue
-        if md_file.name in ["INDEX.md"]:
+        if md_file.name.lower() in ["index.md", "agents.md", "log.md"]:
             continue
             
         rel_path = md_file.relative_to(REPO_ROOT).as_posix()
@@ -123,12 +123,16 @@ def build_index_md(vault_data: dict) -> Path:
     triggers = []
     others = []
     
+    wiki_notes = []
+    
     for p, n in sorted(notes.items(), key=lambda x: x[1]["title"]):
         cat = n["category"]
         if "in_motion/core_work" in cat:
             core_work.append(n)
         elif "in_motion/side_builder" in cat:
             side_builder.append(n)
+        elif "wiki" in cat:
+            wiki_notes.append(n)
         elif "lattices/mental_models" in cat:
             mental_models.append(n)
         elif "lattices/playbooks" in cat:
@@ -175,7 +179,21 @@ def build_index_md(vault_data: dict) -> Path:
     md += """
 ---
 
-## 2. Structural Knowledge Lattices (`lattices/`)
+## 2. Knowledge Wiki & Topic Syntheses (`wiki/`)
+"""
+    if wiki_notes:
+        md += "| Konsep / Entitas | Outgoing | Backlinks |\n| :--- | :--- | :--- |\n"
+        for n in wiki_notes:
+            bl_count = len(backlinks.get(n["path"], []))
+            out_count = len(n["links"])
+            md += f"| [[{n['slug']}\\|{n['title']}]] | {out_count} | {bl_count} |\n"
+    else:
+        md += "_Belum ada konsep wiki terdaftar._\n"
+
+    md += """
+---
+
+## 3. Structural Knowledge Lattices (`lattices/`)
 
 ### Mental Models & Frameworks
 """
@@ -197,7 +215,7 @@ def build_index_md(vault_data: dict) -> Path:
     md += """
 ---
 
-## 3. System Triggers & Execution Engines (`system_triggers/`)
+## 4. System Triggers & Execution Engines (`system_triggers/`)
 """
     for n in triggers:
         md += f"- [[{n['slug']}\\|{n['title']}]]\n"
@@ -205,7 +223,7 @@ def build_index_md(vault_data: dict) -> Path:
     md += """
 ---
 
-## 4. Dangling Links (Unrealized Ideas & Build Seeds)
+## 5. Dangling Links (Unrealized Ideas & Build Seeds)
 > Konsep yang dirujuk dengan `[[wikilinks]]` namun belum dibuat filenya secara fisik. Gunakan ini sebagai backlog ide builder.
 
 """
