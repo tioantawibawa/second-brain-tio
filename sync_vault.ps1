@@ -2,6 +2,7 @@
 # Commits latest changes and pushes to GitHub so Obsidian on PC receives updates.
 
 $ErrorActionPreference = "Continue"
+$env:GIT_TERMINAL_PROMPT = "0"
 $RepoDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 Set-Location $RepoDir
 
@@ -16,7 +17,12 @@ if ($status) {
     $msg = "chore(sync): automated vault update $now"
     git commit -m $msg
     Write-Host "[+] Committed changes: $msg"
-    git push origin main
+    try {
+        git push origin main 2>$null
+    } catch {
+        Write-Host "[!] Git push skipped or requires interactive terminal."
+    }
 } else {
     Write-Host "[*] Vault is already clean. Nothing to sync."
 }
+

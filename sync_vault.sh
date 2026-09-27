@@ -3,8 +3,10 @@
 # Commits latest changes and pushes to GitHub so Obsidian on PC receives updates.
 
 set -e
+export GIT_TERMINAL_PROMPT=0
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$REPO_DIR"
+
 
 # Ensure git author is configured if missing
 git config user.name "Second Brain Bot" || true
