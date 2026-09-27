@@ -1,0 +1,32 @@
+# Secrets & Environment Variables
+.env
+*.local.env
+
+# Python artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+env/
+venv/
+ENV/
+
+# Obsidian local workspace cache (keeps settings, ignores open tabs/window states)
+.obsidian/workspace*
+.obsidian/cache/
+.obsidian/plugins/obsidian-git/
+
+# Neovim / Vim swap and backup files
+*.swp
+*.swo
+*~
+.netrwhist
+
+# OS generated files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Logs & temp files
+*.log
+tmp/
