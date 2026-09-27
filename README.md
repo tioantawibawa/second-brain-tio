@@ -1,7 +1,8 @@
 # Second Brain: Momentum & Deliverable-Driven Knowledge OS
 
-> **Customized Knowledge Architecture for High-Concurrency Builders & AI Engineers.**
-> Diselaraskan secara khusus untuk pola kerja *deliverable-first*, konkurensi tinggi (paralel kerja & side-project builder), visual rapi, dan orientasi eksekusi sampai tahap deployment.
+> **Customized Knowledge Architecture for High-Concurrency Builders & AI Engineers.**  
+> Diselaraskan secara khusus untuk pola kerja *deliverable-first*, konkurensi tinggi (paralel kerja & side-project builder), visual rapi, dan orientasi eksekusi sampai tahap deployment.  
+> 📖 **[Baca Panduan Lengkap Operasional (MANUAL.md)](file:///C:/Users/tio/.gemini/antigravity/scratch/second-brain/MANUAL.md)** untuk petunjuk detail seluruh fitur dari HP ke VPS.
 
 ---
 
