@@ -142,12 +142,32 @@ Produce a JSON response with these exact keys:
     }
     
     data = json.dumps(payload).encode("utf-8")
-    req = urllib.request.Request(url, data=data, headers={"Content-Type": "application/json"}, method="POST")
     
-    with urllib.request.urlopen(req, timeout=60) as resp:
-        body = json.loads(resp.read().decode("utf-8"))
-        raw_text = body["candidates"][0]["content"]["parts"][0]["text"]
-        return json.loads(raw_text)
+    max_retries = 3
+    for attempt in range(max_retries + 1):
+        req = urllib.request.Request(url, data=data, headers={"Content-Type": "application/json"}, method="POST")
+        try:
+            with urllib.request.urlopen(req, timeout=90) as resp:
+                body = json.loads(resp.read().decode("utf-8"))
+                raw_text = body["candidates"][0]["content"]["parts"][0]["text"].strip()
+                # Clean markdown backticks if present
+                if raw_text.startswith("```"):
+                    raw_text = re.sub(r"^```[a-zA-Z]*\n?", "", raw_text)
+                    raw_text = re.sub(r"\n?```$", "", raw_text).strip()
+                return json.loads(raw_text)
+        except urllib.error.HTTPError as e:
+            error_body = e.read().decode("utf-8") if hasattr(e, "read") else str(e)
+            if e.code in (429, 503) and attempt < max_retries:
+                wait_time = 3 * (attempt + 1)
+                print(f"[*] Gemini API 503/429 spike. Retrying in {wait_time}s (attempt {attempt+1}/{max_retries})...")
+                time.sleep(wait_time)
+                continue
+            raise RuntimeError(f"HTTP Error {e.code}: {error_body}")
+        except Exception as e:
+            if attempt < max_retries:
+                time.sleep(3)
+                continue
+            raise RuntimeError(f"Request failed: {e}")
 
 def handle_text_dump(chat_id: int, text: str):
     """Processes a text dump directly into the Second Brain."""
