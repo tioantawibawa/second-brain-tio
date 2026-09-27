@@ -592,6 +592,44 @@ def format_bot_weave(args_text: str) -> str:
     except Exception as e:
         return f"❌ *Gagal menjalankan WEAVE:* `{e}`"
 
+def format_bot_ingest() -> str:
+    raw_dir = REPO_ROOT / "raw"
+    if not raw_dir.exists():
+        return "📥 Folder `raw/` belum ada. Belum ada catatan mentah."
+        
+    items = [f for f in raw_dir.iterdir() if f.is_file() and not f.name.startswith(".")]
+    if not items:
+        return "📥 *Semua file mentah sudah terproses!*\nFolder `raw/` bersih. Belum ada voice note atau web clip baru yang pending."
+        
+    try:
+        sys.path.insert(0, str(REPO_ROOT / "scripts"))
+        import ingest
+        processed_files = []
+        for f in items:
+            success = ingest.ingest_raw_to_wiki(f)
+            if success:
+                processed_files.append(f.name)
+                
+        # Re-index
+        try:
+            sys.path.insert(0, str(REPO_ROOT / "tools"))
+            import indexer
+            indexer.build_index(verbose=False)
+        except Exception:
+            pass
+            
+        file_list = "\n".join([f"• `{fn}`" for fn in processed_files])
+        reply = (
+            f"⚡ *AUTONOMOUS INGESTION COMPLETED!*\n\n"
+            f"📥 *Berhasil memproses {len(processed_files)} file mentah:*\n"
+            f"{file_list}\n\n"
+            f"✨ Seluruh intisari telah diekstrak ke `wiki/`, profil dipetakan ke `crm/`, dan file asli diarsipkan ke `raw/processed/`.\n"
+            f"Ketik `/list` untuk membaca catatan baru."
+        )
+        return reply
+    except Exception as e:
+        return f"❌ *Gagal memproses ingest:* `{e}`"
+
 def format_bot_help() -> str:
     return (
         "🧠 *Panduan Second Brain Telegram Ingest Bot*\n\n"
@@ -599,6 +637,8 @@ def format_bot_help() -> str:
         "• *Voice Note / VN*: Cukup rekam suara langsung. Bot otomatis mentranskripsi via Whisper dan menyimpannya ke `raw/`.\n"
         "• *Link Web / YouTube*: Kirim URL link. Judul dan konten akan diekstrak otomatis ke `raw/`.\n"
         "• *Pikiran / Catatan Singkat*: Kirim teks pendek. Otomatis masuk ke `journal/quick_captures.md` dengan timestamp.\n\n"
+        "⚡ *Autonomous Pipeline & Triage:*\n"
+        "• `/ingest` - Proses seluruh file mentah di `raw/` ke `wiki/` dan profil `crm/`\n\n"
         "⚔️ *Operasi Strategis & Kognitif:*\n"
         "• `/warroom <keputusan>` - Jalankan War Room Pre-Mortem Red Team untuk menguji risiko rencana Anda\n"
         "• `/weave <Domain A> x <Domain B>` - Sintesis analogi struktural lintas domain\n\n"
@@ -680,7 +720,13 @@ async def ptb_weave(update: Update, context: ContextTypes.DEFAULT_TYPE):
     args = " ".join(context.args).strip() if context.args else ""
     status_msg = await update.message.reply_text("🕸️ *Menjalankan sintesis lintas domain WEAVE...*", parse_mode="Markdown")
     reply = format_bot_weave(args)
-    await status_msg.edit_text(reply, parse_mode="Markdown")
+async def ptb_ingest(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = str(update.effective_user.id)
+    if ALLOWED_USER_ID and user_id != str(ALLOWED_USER_ID):
+        return
+    msg = await update.message.reply_text("⚡ *Menjalankan Autonomous Ingest Pipeline...*", parse_mode="Markdown")
+    reply = format_bot_ingest()
+    await msg.edit_text(reply, parse_mode="Markdown")
 
 async def ptb_handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.effective_user.id)
@@ -692,6 +738,13 @@ async def ptb_handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text.strip()
     lower_text = text.lower()
     
+    # Intercept Ingest trigger
+    if text in ("/ingest", "/ingest all", "/proses"):
+        msg = await update.message.reply_text("⚡ *Menjalankan Autonomous Ingest Pipeline...*", parse_mode="Markdown")
+        reply = format_bot_ingest()
+        await msg.edit_text(reply, parse_mode="Markdown")
+        return
+
     # Intercept War Room / Pre-Mortem commands or prefix triggers
     if text.startswith(("/warroom", "/premortem")):
         decision = re.sub(r"^/(?:warroom|premortem)\s*", "", text).strip()
@@ -796,6 +849,7 @@ def run_ptb():
     app.add_handler(CommandHandler("warroom", ptb_warroom))
     app.add_handler(CommandHandler("premortem", ptb_warroom))
     app.add_handler(CommandHandler("weave", ptb_weave))
+    app.add_handler(CommandHandler("ingest", ptb_ingest))
     app.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), ptb_handle_text))
     app.add_handler(MessageHandler(filters.VOICE | filters.AUDIO, ptb_handle_voice))
     
@@ -845,6 +899,10 @@ def run_builtin_fallback():
                     lower_text = text.lower()
                     if text in ("/start", "/help"):
                         send_tg_msg(chat_id, format_bot_help())
+                        continue
+                    elif text in ("/ingest", "/ingest all", "/proses"):
+                        send_tg_msg(chat_id, "⚡ *Menjalankan Autonomous Ingest Pipeline...*")
+                        send_tg_msg(chat_id, format_bot_ingest())
                         continue
                     elif text.startswith(("/warroom", "/premortem")):
                         decision = re.sub(r"^/(?:warroom|premortem)\s*", "", text).strip()
