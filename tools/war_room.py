@@ -268,6 +268,31 @@ Keluarkan dalam format JSON:
         except Exception:
             continue
 
+    # Tier 2: Groq Llama-3.3-70b Fallback
+    groq_key = os.getenv("GROQ_API_KEY")
+    if groq_key:
+        try:
+            url = "https://api.groq.com/openai/v1/chat/completions"
+            payload = {
+                "model": "llama-3.3-70b-versatile",
+                "messages": [{"role": "user", "content": prompt}],
+                "response_format": {"type": "json_object"},
+                "temperature": 0.3
+            }
+            req = urllib.request.Request(
+                url,
+                data=json.dumps(payload).encode("utf-8"),
+                headers={"Content-Type": "application/json", "Authorization": f"Bearer {groq_key}"}
+            )
+            with urllib.request.urlopen(req, timeout=18) as resp:
+                data = json.loads(resp.read().decode("utf-8"))
+                text = data["choices"][0]["message"]["content"].strip()
+                parsed = json.loads(text)
+                print("[*] Red Team War Room analysis synthesized via Groq (llama-3.3-70b)")
+                return parsed
+        except Exception:
+            pass
+
     return None
 
 
@@ -598,6 +623,32 @@ def main():
 
     print(f"\n[SUCCESS] WAR ROOM PRE-MORTEM completed successfully.")
     print(f"File created: in_motion/{target_filename}")
+
+    # Visual Executive Summary directly in terminal
+    title = data.get("project_title", decision_text)
+    print("\n" + "=" * 78)
+    print(f"💀 WAR ROOM PRE-MORTEM EXECUTIVE SUMMARY: {title}")
+    print("=" * 78)
+    print(f"\n[!] RETROSPEKTIF KEGAGALAN DARI MASA DEPAN:\n{data.get('executive_premortem_thesis', '')}\n")
+    
+    print("[-] 3 SKENARIO KEGAGALAN PALING REALISTIS:")
+    for idx, fm in enumerate(data.get("failure_modes", []), 1):
+        print(f"  {idx}. {fm['scenario']} (Probabilitas: {fm.get('probability', 'Tinggi')})")
+        print(f"     Leading Indicator: {fm['trigger_event']}")
+        
+    print("\n[?] 5 PERTANYAAN BLINDSPOT WAJIB DIJAWAB SEBELUM COMMIT:")
+    for idx, q in enumerate(data.get("blindspot_questions", []), 1):
+        print(f"  {idx}. {q}")
+        
+    print("\n[#] ACTIONABLE MITIGATION & KILL-SWITCH THRESHOLDS:")
+    for idx, am in enumerate(data.get("actionable_mitigations", []), 1):
+        print(f"  {idx}. {am['action']}")
+        print(f"     Batas Toleransi (Kill-Switch): {am['metric_threshold']}")
+        
+    print("=" * 78)
+    print(f"📖 Baca dokumen lengkap di terminal : cat in_motion/{target_filename}")
+    print(f"📱 Atau baca di Telegram bot        : /read {target_file.stem}")
+    print("=" * 78 + "\n")
 
 
 if __name__ == "__main__":
