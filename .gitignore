@@ -30,3 +30,8 @@ Desktop.ini
 # Logs & temp files
 *.log
 tmp/
+
+# Local search database cache (regenerated via tools/indexer.py)
+data/*.db
+data/*.sqlite
+

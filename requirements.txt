@@ -1,3 +1,6 @@
 # Second Brain Ingestion Daemon Dependencies
 python-telegram-bot>=20.0
 requests>=2.28.0
+
+# Lightweight Local Vector Embedding (FastEmbed is recommended for low RAM on VPS)
+fastembed>=0.2.0

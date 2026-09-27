@@ -74,9 +74,19 @@ Setiap kali agen diperintahkan untuk melakukan ingest atau mendeteksi file baru 
 
 Setiap kali pengguna mengajukan pertanyaan analitis, konsultasi arsitektur, atau sintesis gagasan:
 
-1. **Penelusuran Konteks (Grounding)**:
-   - Periksa [index.md](file:///C:/Users/tio/.gemini/antigravity/scratch/second-brain/index.md) dan cari referensi konsep terkait di dalam direktori `wiki/`, `in_motion/`, dan `lattices/`.
-   - Gunakan skrip pencarian lokal `python scripts/graph_index.py search "<query>"` untuk menemukan konteks yang paling relevan secara matematis (BM25).
+1. **Penelusuran Konteks (Grounded Hybrid Search)**:
+   - **WAJIB**: Agen terlebih dahulu menjalankan skrip pencarian hybrid lokal untuk mengumpulkan konteks sebelum menyusun jawaban:
+     ```bash
+     python tools/search.py "<pertanyaan_atau_kata_kunci>" --top-k 5
+     ```
+     *(Gunakan opsi `--json` jika agen memerlukan keluaran terstruktur untuk reasoning engine)*.
+   - Skrip ini menggabungkan pencarian exact keyword BM25 dan dense semantic vector search untuk mengidentifikasi potongan teks (*chunks*) paling relevan lengkap dengan nomor baris spesifik (`#L...`) dan judul section.
+   - Jika terdapat file baru yang belum terindeks atau database indeks belum tersedia, jalankan:
+     ```bash
+     python tools/indexer.py
+     ```
+   - Periksa juga [index.md](file:///C:/Users/tio/.gemini/antigravity/scratch/second-brain/index.md) untuk melihat peta konektivitas jaringan dan *backlink matrix*.
+
 2. **Formulasi Jawaban Ter-Grounding**:
    - Berikan jawaban yang bersandar kuat (*grounded*) pada catatan yang tersimpan di dalam vault.
    - Cantumkan referensi wikilinks `[[nama-catatan]]` pada setiap klaim atau pola yang dirujuk.
