@@ -65,13 +65,20 @@ def tg_request(method: str, data: dict = None) -> dict:
         return {}
 
 def send_message(chat_id: int, text: str, parse_mode: str = "Markdown"):
-    """Sends a message back to the user on Telegram."""
-    tg_request("sendMessage", {
+    """Sends a message back to the user on Telegram with plain text fallback."""
+    res = tg_request("sendMessage", {
         "chat_id": chat_id,
         "text": text,
         "parse_mode": parse_mode,
         "disable_web_page_preview": True
     })
+    # If Markdown parsing fails due to unescaped special characters, fallback to plain text
+    if not res.get("ok") and parse_mode:
+        tg_request("sendMessage", {
+            "chat_id": chat_id,
+            "text": text,
+            "disable_web_page_preview": True
+        })
 
 def download_file(file_id: str) -> tuple[bytes, str]:
     """Downloads a file from Telegram servers."""
@@ -304,11 +311,94 @@ def handle_search(chat_id: int, query: str):
         
     reply = f"🔍 *Hasil Pencarian:* `{query}` (Top {min(3, len(scores))})\n\n"
     for rank, (score, path, note) in enumerate(scores[:3], 1):
+        cmd_slug = "/read_" + note["slug"].replace("-", "_")
         reply += f"*{rank}. [[{note['slug']}]]* (Score: `{score:.1f}`)\n"
         reply += f"📁 `{path}`\n"
         snippet = note["body"][:100].replace("\n", " ").strip()
-        reply += f"_{snippet}..._\n\n"
+        reply += f"_{snippet}..._\n"
+        reply += f"📖 Baca full: {cmd_slug}\n\n"
         
+    send_message(chat_id, reply)
+
+def handle_read(chat_id: int, raw_cmd: str):
+    """Sends the full content of a requested note directly to Telegram."""
+    # Handle both formats: "/read <slug>" and "/read_<slug>"
+    query = raw_cmd.strip()
+    if query.startswith("/read_"):
+        query = query[6:]
+    elif query.startswith("/read"):
+        query = query[5:].strip()
+    elif query.startswith("/baca"):
+        query = query[5:].strip()
+        
+    clean_query = query.replace("_", "-").strip().lower()
+    
+    if not clean_query:
+        send_message(chat_id, "ℹ️ Format: `/read <nama-catatan>` atau ketik `/list` untuk memilih catatan.")
+        return
+
+    vault = graph_index.scan_vault()
+    notes = vault["notes"]
+    
+    # 1. Exact match on slug
+    matched_note = None
+    for note in notes.values():
+        if note["slug"].lower() == clean_query:
+            matched_note = note
+            break
+            
+    # 2. Fuzzy / partial match on slug or title
+    if not matched_note:
+        for note in notes.values():
+            if clean_query in note["slug"].lower() or clean_query in note["title"].lower():
+                matched_note = note
+                break
+                
+    if not matched_note:
+        send_message(
+            chat_id, 
+            f"❌ Catatan `{clean_query}` tidak ditemukan.\n\n"
+            f"Ketik `/list` untuk melihat daftar catatan yang tersedia, atau ketik `/search {clean_query}`."
+        )
+        return
+
+    full_text = matched_note["content"]
+    header = (
+        f"📄 *{matched_note['title']}*\n"
+        f"📁 `{matched_note['path']}`\n"
+        f"───────────────\n\n"
+    )
+    
+    # Telegram max message length is 4096. Split into safe chunks of 3800 chars.
+    chunk_size = 3800
+    if len(full_text) <= chunk_size:
+        send_message(chat_id, header + full_text)
+    else:
+        send_message(chat_id, header)
+        for i in range(0, len(full_text), chunk_size):
+            chunk = full_text[i:i+chunk_size]
+            send_message(chat_id, chunk)
+
+def handle_list(chat_id: int):
+    """Lists recent notes in the vault with one-tap /read links."""
+    vault = graph_index.scan_vault()
+    notes = list(vault["notes"].values())
+    
+    if not notes:
+        send_message(chat_id, "📚 Vault Anda masih kosong.")
+        return
+        
+    # Sort notes alphabetically or by path
+    notes.sort(key=lambda x: x["path"])
+    
+    reply = f"📚 *Daftar Catatan di Second Brain ({len(notes)} catatan):*\n\n"
+    for idx, n in enumerate(notes[:20], 1):
+        clean_cmd = "/read_" + n["slug"].replace("-", "_")
+        reply += f"*{idx}. {n['title']}*\n"
+        reply += f"📁 `{n['path']}`\n"
+        reply += f"👉 {clean_cmd}\n\n"
+        
+    reply += "💡 _Klik perintah di atas untuk membaca isi full catatan._"
     send_message(chat_id, reply)
 
 def handle_status(chat_id: int):
@@ -328,7 +418,9 @@ def handle_status(chat_id: int):
         f"🚀 *Side Builder:* `{side}`\n"
         f"🧱 *Knowledge Lattices:* `{lattices}`\n"
         f"🌱 *Dangling Seeds (Backlog):* `{len(dangling)}`\n\n"
-        f"Ketik `/search <query>` untuk mencari catatan."
+        f"Perintah cepat:\n"
+        f"• `/list` -> Daftar semua catatan\n"
+        f"• `/search <query>` -> Pencarian catatan"
     )
     send_message(chat_id, reply)
 
@@ -370,17 +462,22 @@ def run_bot():
                     continue
                     
                 # Handle text & commands
-                text = message.get("text", "")
+                text = message.get("text", "").strip()
                 if text.startswith("/start"):
                     send_message(
                         chat_id,
                         "🧠 *Second Brain Telegram Gateway Aktif!*\n\n"
-                        "Kirim apa saja:\n"
-                        "1. *Ketik teks ide/transkrip* -> otomatis di-ingest.\n"
-                        "2. *Kirim Voice Note (VN)* -> otomatis ditranskripsikan & di-ingest via Gemini 3.8 Flash.\n"
-                        "3. `/search <query>` -> BM25 local search langsung dari Telegram.\n"
-                        "4. `/status` -> Statistik vault Second Brain."
+                        "Perintah yang Tersedia:\n"
+                        "1. *Kirim Teks Ide/Voice Note* -> Otomatis di-ingest & dipetakan.\n"
+                        "2. `/list` -> Menampilkan daftar semua catatan.\n"
+                        "3. `/read <nama_catatan>` -> Membaca isi lengkap catatan.\n"
+                        "4. `/search <kata_kunci>` -> Pencarian semantik lokal via BM25.\n"
+                        "5. `/status` -> Ringkasan statistik deliverable & backlog."
                     )
+                elif text.startswith("/read") or text.startswith("/baca"):
+                    handle_read(chat_id, text)
+                elif text.startswith("/list") or text.startswith("/recent"):
+                    handle_list(chat_id)
                 elif text.startswith("/search"):
                     query = text[7:].strip()
                     handle_search(chat_id, query)
