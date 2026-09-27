@@ -367,7 +367,131 @@ def process_incoming_text(text: str) -> dict:
             "preview": clean_text[:120]
         }
 
-# ================= 5. Implementation Engines =================
+# ================= 5. Interactive Commands (/search, /list, /read, /status) =================
+
+def format_bot_search(query: str) -> str:
+    query = query.strip()
+    if not query:
+        return "🔍 Format: `/search <kata kunci>`\nContoh: `/search scoring musiman`"
+    try:
+        sys.path.insert(0, str(REPO_ROOT / "tools"))
+        import search
+        hits = search.search_vault(query, top_k=3, verbose=False)
+        if not hits:
+            return f"🔍 *Pencarian:* `{query}`\n\n_Tidak ditemukan catatan yang cocok di vault._"
+        reply = f"🔍 *Hasil Pencarian:* `{query}` ({len(hits)} catatan)\n\n"
+        for idx, h in enumerate(hits, start=1):
+            cmd_slug = "/read_" + Path(h["path"]).stem.replace("-", "_")
+            reply += f"*{idx}. {h['title']}*\n"
+            reply += f"📁 `{h['path']}`\n"
+            snippet = h["snippet"][:110].replace("\n", " ").strip()
+            reply += f"_{snippet}..._\n"
+            reply += f"📖 Baca: {cmd_slug}\n\n"
+        return reply
+    except Exception as e:
+        return f"❌ *Error saat mencari:* `{e}`"
+
+def format_bot_list() -> str:
+    dirs = ["wiki", "in_motion", "lattices", "journal"]
+    notes = []
+    for d in dirs:
+        p = REPO_ROOT / d
+        if not p.exists():
+            continue
+        for f in p.glob("**/*.md"):
+            if f.name in ("index.md", "README.md", "INDEX.md"):
+                continue
+            title = f.stem.replace("-", " ").title()
+            try:
+                m = re.search(r"^title:\s*[\"']?(.*?)[\"']?$", f.read_text(encoding="utf-8")[:500], re.MULTILINE)
+                if m:
+                    title = m.group(1).strip()
+            except Exception:
+                pass
+            notes.append((f.stat().st_mtime, title, f.stem, f.relative_to(REPO_ROOT).as_posix()))
+    notes.sort(key=lambda x: x[0], reverse=True)
+    if not notes:
+        return "📚 Vault Anda belum memiliki catatan."
+    reply = f"📚 *Catatan Terbaru di Second Brain ({len(notes)} total):*\n\n"
+    for idx, (_, title, stem, rel) in enumerate(notes[:10], start=1):
+        cmd = "/read_" + stem.replace("-", "_")
+        reply += f"*{idx}. {title}*\n"
+        reply += f"📁 `{rel}`\n"
+        reply += f"👉 {cmd}\n\n"
+    reply += "💡 _Klik perintah di atas untuk membaca isi catatan langsung di Telegram._"
+    return reply
+
+def format_bot_read(target_slug: str) -> list[str]:
+    target = target_slug.strip("/_ ").replace("-", " ").replace("_", " ").lower()
+    if not target:
+        return ["ℹ️ Format: `/read <nama-catatan>` atau ketik `/list` untuk memilih."]
+    
+    matched_file = None
+    matched_title = target
+    for f in REPO_ROOT.glob("**/*.md"):
+        if any(skip in f.parts for skip in [".git", "node_modules", ".obsidian"]):
+            continue
+        stem_norm = f.stem.replace("-", " ").replace("_", " ").lower()
+        if target == stem_norm or target in stem_norm:
+            matched_file = f
+            try:
+                m = re.search(r"^title:\s*[\"']?(.*?)[\"']?$", f.read_text(encoding="utf-8")[:500], re.MULTILINE)
+                if m:
+                    matched_title = m.group(1).strip()
+            except Exception:
+                pass
+            break
+            
+    if not matched_file:
+        return [f"❌ Catatan `{target_slug}` tidak ditemukan.\nKetik `/list` untuk daftar catatan atau `/search {target_slug}`."]
+        
+    try:
+        content = matched_file.read_text(encoding="utf-8")
+        rel_path = matched_file.relative_to(REPO_ROOT).as_posix()
+        header = f"📄 *{matched_title}*\n📁 `{rel_path}`\n───────────────\n\n"
+        full = header + content
+        chunks = []
+        chunk_size = 3800
+        for i in range(0, len(full), chunk_size):
+            chunks.append(full[i:i+chunk_size])
+        return chunks
+    except Exception as e:
+        return [f"❌ Gagal membaca file: {e}"]
+
+def format_bot_status() -> str:
+    db_path = REPO_ROOT / "data" / "vault_search.db"
+    db_size = f"{db_path.stat().st_size / 1024:.1f} KB" if db_path.exists() else "Belum terindeks"
+    notes_count = sum(1 for f in REPO_ROOT.glob("**/*.md") if not any(k in f.parts for k in [".git", ".obsidian"]))
+    raw_pending = sum(1 for f in (REPO_ROOT / "raw").glob("*.md")) if (REPO_ROOT / "raw").exists() else 0
+    return (
+        f"📊 *Second Brain System Status*\n\n"
+        f"📚 *Total Catatan:* `{notes_count}` file Markdown\n"
+        f"📥 *Raw Inbox Pending:* `{raw_pending}` file belum di-ingest\n"
+        f"🔍 *Search Index:* `{db_size}` (SQLite)\n"
+        f"🤖 *Gemini Model:* `{GEMINI_MODEL}`\n"
+        f"⚡ *Whisper Engine:* `{'Groq (whisper-large-v3)' if GROQ_API_KEY else 'Gemini Multimodal'}`\n\n"
+        f"Perintah cepat:\n"
+        f"• `/list` -> Daftar 10 catatan terbaru\n"
+        f"• `/search <kueri>` -> Cari catatan\n"
+        f"• `/help` -> Bantuan lengkap"
+    )
+
+def format_bot_help() -> str:
+    return (
+        "🧠 *Panduan Second Brain Telegram Ingest Bot*\n\n"
+        "📥 *Cara Menangkap Input dari HP:*\n"
+        "• *Voice Note / VN*: Cukup rekam suara langsung. Bot otomatis mentranskripsi via Whisper dan menyimpannya ke `raw/`.\n"
+        "• *Link Web / YouTube*: Kirim URL link. Judul dan konten akan diekstrak otomatis ke `raw/`.\n"
+        "• *Pikiran / Catatan Singkat*: Kirim teks pendek. Otomatis masuk ke `journal/quick_captures.md` dengan timestamp.\n\n"
+        "🔎 *Perintah Interaktif:*\n"
+        "• `/search <kueri>` - Cari catatan via Hybrid Search (BM25 + Vektor)\n"
+        "• `/list` - Tampilkan daftar catatan terbaru dengan tombol baca\n"
+        "• `/read <nama_file>` - Baca catatan langsung di Telegram\n"
+        "• `/status` - Cek kesehatan sistem & database\n"
+        "• `/help` - Tampilkan bantuan ini"
+    )
+
+# ================= 6. Implementation Engines =================
 
 # --- A. python-telegram-bot (v20+ Async Implementation) ---
 try:
@@ -388,14 +512,38 @@ async def ptb_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if ALLOWED_USER_ID and user_id != str(ALLOWED_USER_ID):
         await update.message.reply_text(f"⛔ Akses Ditolak. User ID `{user_id}` tidak terdaftar.", parse_mode="Markdown")
         return
-    await update.message.reply_text(
-        "🧠 *Second Brain Telegram Ingest Bot Active*\n\n"
-        "Input yang dapat dikirim langsung:\n"
-        "🎙️ *Voice Note / Audio* -> Ditranskripsi ke `raw/voice_dump_*.md` (`#voice-dump`)\n"
-        "🔗 *Link Web / YouTube* -> Diekstrak judulnya ke `raw/web_*.md`\n"
-        "📝 *Teks Singkat / Ide* -> Disimpan ke `journal/quick_captures.md`",
-        parse_mode="Markdown"
-    )
+    await update.message.reply_text(format_bot_help(), parse_mode="Markdown")
+
+async def ptb_help(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await ptb_start(update, context)
+
+async def ptb_status(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = str(update.effective_user.id)
+    if ALLOWED_USER_ID and user_id != str(ALLOWED_USER_ID):
+        return
+    await update.message.reply_text(format_bot_status(), parse_mode="Markdown")
+
+async def ptb_list(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = str(update.effective_user.id)
+    if ALLOWED_USER_ID and user_id != str(ALLOWED_USER_ID):
+        return
+    await update.message.reply_text(format_bot_list(), parse_mode="Markdown")
+
+async def ptb_search(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = str(update.effective_user.id)
+    if ALLOWED_USER_ID and user_id != str(ALLOWED_USER_ID):
+        return
+    query = " ".join(context.args).strip() if context.args else ""
+    await update.message.reply_text(format_bot_search(query), parse_mode="Markdown")
+
+async def ptb_read(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = str(update.effective_user.id)
+    if ALLOWED_USER_ID and user_id != str(ALLOWED_USER_ID):
+        return
+    target = " ".join(context.args).strip() if context.args else ""
+    chunks = format_bot_read(target)
+    for c in chunks:
+        await update.message.reply_text(c, parse_mode="Markdown")
 
 async def ptb_handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.effective_user.id)
@@ -404,7 +552,32 @@ async def ptb_handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(f"⛔ Akses Ditolak. User ID `{user_id}` tidak terdaftar.", parse_mode="Markdown")
         return
 
-    text = update.message.text
+    text = update.message.text.strip()
+    
+    # Intercept direct /read_ commands
+    if text.startswith("/read_"):
+        slug = text[6:].replace("_", "-")
+        chunks = format_bot_read(slug)
+        for c in chunks:
+            await update.message.reply_text(c, parse_mode="Markdown")
+        return
+    elif text.startswith("/read"):
+        slug = text[5:].strip().replace("_", "-")
+        chunks = format_bot_read(slug)
+        for c in chunks:
+            await update.message.reply_text(c, parse_mode="Markdown")
+        return
+    elif text.startswith("/search"):
+        q = text[7:].strip()
+        await update.message.reply_text(format_bot_search(q), parse_mode="Markdown")
+        return
+    elif text == "/list":
+        await update.message.reply_text(format_bot_list(), parse_mode="Markdown")
+        return
+    elif text == "/status":
+        await update.message.reply_text(format_bot_status(), parse_mode="Markdown")
+        return
+
     res = process_incoming_text(text)
     
     if res["type"] == "link":
@@ -457,6 +630,11 @@ def run_ptb():
     app = ApplicationBuilder().token(BOT_TOKEN).build()
     
     app.add_handler(CommandHandler("start", ptb_start))
+    app.add_handler(CommandHandler("help", ptb_help))
+    app.add_handler(CommandHandler("status", ptb_status))
+    app.add_handler(CommandHandler("list", ptb_list))
+    app.add_handler(CommandHandler("search", ptb_search))
+    app.add_handler(CommandHandler("read", ptb_read))
     app.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), ptb_handle_text))
     app.add_handler(MessageHandler(filters.VOICE | filters.AUDIO, ptb_handle_voice))
     
@@ -503,15 +681,30 @@ def run_builtin_fallback():
                 # 1. Text Message
                 if "text" in msg:
                     text = msg["text"].strip()
-                    if text == "/start":
-                        send_tg_msg(
-                            chat_id,
-                            "🧠 *Second Brain Telegram Ingest Bot Active*\n\n"
-                            "Input yang dapat dikirim langsung:\n"
-                            "🎙️ *Voice Note / Audio* -> Ditranskripsi ke `raw/voice_dump_*.md` (`#voice-dump`)\n"
-                            "🔗 *Link Web / YouTube* -> Diekstrak judulnya ke `raw/web_*.md`\n"
-                            "📝 *Teks Singkat / Ide* -> Disimpan ke `journal/quick_captures.md`"
-                        )
+                    if text in ("/start", "/help"):
+                        send_tg_msg(chat_id, format_bot_help())
+                        continue
+                    elif text == "/status":
+                        send_tg_msg(chat_id, format_bot_status())
+                        continue
+                    elif text == "/list":
+                        send_tg_msg(chat_id, format_bot_list())
+                        continue
+                    elif text.startswith("/search"):
+                        q = text[7:].strip()
+                        send_tg_msg(chat_id, format_bot_search(q))
+                        continue
+                    elif text.startswith("/read_"):
+                        slug = text[6:].replace("_", "-")
+                        chunks = format_bot_read(slug)
+                        for c in chunks:
+                            send_tg_msg(chat_id, c)
+                        continue
+                    elif text.startswith("/read"):
+                        slug = text[5:].strip().replace("_", "-")
+                        chunks = format_bot_read(slug)
+                        for c in chunks:
+                            send_tg_msg(chat_id, c)
                         continue
                         
                     res = process_incoming_text(text)
