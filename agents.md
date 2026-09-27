@@ -27,7 +27,8 @@ second-brain/
 
 ---
 
-## 2. Empat Protokol Operasi Otonom Agen
+## 2. Lima Protokol Operasi Otonom Agen
+
 
 ### PROTOKOL 1: OPERASI INGEST (`raw/` $\rightarrow$ `wiki/`)
 
@@ -172,7 +173,65 @@ Setiap kali ada tokoh, kolaborator, investor, mentor, klien, atau rekan diskusi 
 
 ---
 
+### PROTOKOL 5: OPERASI WEAVE (Sintesis & Analogi Struktural Lintas Domain)
+
+Setiap kali pengguna meminta untuk menjalankan operasi `WEAVE` atau menghubungkan dua bidang/domain yang tampak tidak berhubungan:
+
+**Format Perintah Pengguna**:
+> *"Jalankan operasi WEAVE antara domain [Domain A] dan [Domain B]"*  
+> *(Contoh: "Jalankan operasi WEAVE antara domain Credit Risk/Data Architecture dan Tactical Football Analytics / Behavioral Economics")*
+
+**Instruksi Pelaksanaan Wajib bagi Agen**:
+
+1. **Penelusuran Konsep Multi-Domain**:
+   - Telusuri konsep-konsep di `wiki/`, `in_motion/`, dan `lattices/` yang merepresentasikan Domain A dan Domain B.
+   - Jalankan `python tools/search.py "<Domain A>"` dan `python tools/search.py "<Domain B>"` untuk mengekstrak grounding konteks dan potongan teks spesifik dari kedua domain.
+2. **Identifikasi Abstraksi Isomorfik (Tingkat Tinggi)**:
+   - Temukan pola *first-principles* atau analogi struktural yang mendasari kedua domain, seperti:
+     - *Feedback loops & delayed consequence* (umpan balik sistemik).
+     - *Bottlenecks & Theory of Constraints* (hambatan kapasitas aliran).
+     - *Probability shifting & Fat-tailed asymmetric risk* (pergeseran probabilitas ekstrim).
+     - *Fragility vs Antifragility* (daya tahan sistem saat menerima tekanan).
+     - *Exploration vs Exploitation trade-offs* (eksplorasi peluang vs eksploitasi hasil).
+     - *Spatial-temporal coordination & dynamic role shifting* (koordinasi ruang-waktu adaptif).
+3. **Penyusunan Catatan Sintesis Baru (`wiki/synthesis_[TopikA]_[TopikB].md`)**:
+   - Buat file baru dengan konvensi nama: `wiki/synthesis_[TopikA]_[TopikB].md` (format clean slug).
+   - Terapkan skema YAML Frontmatter terstandarisasi:
+     ```yaml
+     ---
+     title: "Sintesis Lintas Domain: [Topik A] x [Topik B]"
+     type: cross_domain_synthesis
+     domain_a: "[Domain A]"
+     domain_b: "[Domain B]"
+     created_at: YYYY-MM-DD
+     tags:
+       - weave
+       - cross-domain
+       - structural-analogy
+       - mental-model
+     links:
+       - "[[konsep-terkait-domain-a]]"
+       - "[[konsep-terkait-domain-b]]"
+     ---
+     ```
+   - Susun isi dokumen dengan struktur baku 4 seksi:
+     - **1. Tesis & Analogi Struktural Tingkat Tinggi**: Penjelasan isomorfisma konseptual yang menghubungkan kedua domain secara sistemik.
+     - **2. Matriks Pemetaan Isomorfik**: Tabel komparasi domain (Dimensi Sistem | Domain A | Domain B | Abstraksi Bersama).
+     - **3. Tiga Transfer Ilmu Konkret (Cross-Pollination)**: Jelaskan secara presisi dan teknis bagaimana solusi, metodologi, atau algoritma dari Domain B dapat memecahkan masalah umum di Domain A:
+       - *Transfer 1*: Solusi taktis B untuk masalah kronis di A.
+       - *Transfer 2*: Kerangka evaluasi B untuk mitigasi blindspot di A.
+       - *Transfer 3*: Mekanisme adaptasi B untuk optimasi performa di A.
+     - **4. Implikasi Eksekusi & Next Action**: Rekomendasi playbook atau eksperimen konkret di `in_motion/`.
+4. **Rekonsiliasi Indeks & Konektivitas Graf**:
+   - Daftarkan file sintesis baru ini ke kedua klaster konsep di [index.md](file:///C:/Users/tio/.gemini/antigravity/scratch/second-brain/index.md) dan [INDEX.md](file:///C:/Users/tio/.gemini/antigravity/scratch/second-brain/INDEX.md).
+   - Jalankan `python tools/indexer.py` agar dokumen sintesis baru langsung terindeks di mesin pencarian hybrid SQLite.
+5. **Pencatatan Audit Trail**:
+   - Catat operasi ke dalam [log.md](file:///C:/Users/tio/.gemini/antigravity/scratch/second-brain/log.md) dengan tipe `WEAVE`.
+
+---
+
 ## 3. Standar Kualitas Keluaran & Etika Kognitif
+
 
 1. **Non-Asumsi & Evidence-First**: Jangan mengarang data atau entitas baru tanpa dasar teks yang jelas dari sumber `raw/` atau interaksi pengguna.
 2. **Zero Dangling Orphans Tanpa Alasan**: Setiap file baru di `wiki/`, `journal/`, atau `crm/` wajib terhubung minimal ke 1 nodus lain dan tercatat di indeks masing-masing.
