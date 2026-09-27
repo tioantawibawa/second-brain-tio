@@ -10,6 +10,7 @@
 ### Core Work (Professional & Enterprise Deliverables)
 | Deliverable | Status | Outgoing | Backlinks |
 | :--- | :--- | :--- | :--- |
+| [[in_motion/war_room_rencana_migrasi_pipeline_data|War Room Pre-Mortem: Rencana Migrasi Pipeline Data]] | `war_room` | 3 | 0 |
 | [[raw-agent-rag-dump\|Raw Agent Rag Dump]] | `active` | 9 | 0 |
 
 ### Side Builder (Eksperimen AI Agent & Prototipe)

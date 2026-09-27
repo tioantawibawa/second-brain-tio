@@ -27,7 +27,7 @@ second-brain/
 
 ---
 
-## 2. Lima Protokol Operasi Otonom Agen
+## 2. Enam Protokol Operasi Otonom Agen
 
 
 ### PROTOKOL 1: OPERASI INGEST (`raw/` $\rightarrow$ `wiki/`)
@@ -227,6 +227,58 @@ Setiap kali pengguna meminta untuk menjalankan operasi `WEAVE` atau menghubungka
    - Jalankan `python tools/indexer.py` agar dokumen sintesis baru langsung terindeks di mesin pencarian hybrid SQLite.
 5. **Pencatatan Audit Trail**:
    - Catat operasi ke dalam [log.md](file:///C:/Users/tio/.gemini/antigravity/scratch/second-brain/log.md) dengan tipe `WEAVE`.
+
+---
+
+### PROTOKOL 6: OPERASI WAR ROOM PRE-MORTEM (Red Team Adversary & Stress-Testing Keputusan)
+
+Setiap kali pengguna meminta untuk menjalankan simulasi War Room, Pre-Mortem, atau Red Teaming terhadap rencana/keputusan kritis:
+
+**Format Perintah Pengguna**:
+> *"Role: Red Team Adversary & Decision Strategist. Jalankan simulasi War Room Pre-Mortem untuk [Nama Keputusan / Proyek]"*  
+> *(Contoh: "Jalankan simulasi War Room Pre-Mortem untuk Rencana migrasi pipeline data / Pengambilan proyek konsultasi baru / Strategi negosiasi dengan partner X")*
+
+**Instruksi Pelaksanaan Wajib bagi Agen**:
+
+1. **Triangulasi Konteks & Audit Jejak Historis**:
+   - Telusuri `journal/` untuk mendeteksi pola bias kognitif masa lalu (*builder's over-optimism*, *cognitive overflow*, *delayed feedback*, atau friksi operasional yang pernah menimbulkan stres tinggi).
+   - Telusuri `crm/` untuk mengecek apakah ada individu dalam jaringan pengguna yang memiliki keahlian relevan, sudut pandang berlawanan (*devil's advocate*), atau dapat dijadikan *sounding board* kritis.
+   - Telusuri `wiki/` dan `lattices/` (termasuk arsitektur sistem dan SLA latensi) untuk menguji keabsahan asumsi teknis serta menemukan titik kerapuhan (*fragility points*).
+2. **Simulasi Retrospektif dari Masa Depan (Pre-Mortem Mindset)**:
+   - Asumsikan skenario terburuk: Kita berada di 6–12 bulan ke depan, dan inisiatif ini telah **gagal total** secara memalukan, membakar anggaran, dan mengacaukan operasional.
+   - Bedah mekanisme kegagalan tanpa kompromi (*zero-sugarcoating*).
+3. **Penyusunan Laporan War Room (`in_motion/war_room_[nama_proyek].md`)**:
+   - Buat file baru di direktori `in_motion/` dengan skema Frontmatter:
+     ```yaml
+     ---
+     title: "War Room Pre-Mortem: [Nama Proyek]"
+     type: war_room_pre_mortem
+     status: active
+     decision_target: "[Nama Proyek / Keputusan]"
+     created_at: YYYY-MM-DD
+     tags:
+       - war-room
+       - pre-mortem
+       - red-team
+       - decision-strategy
+       - risk-mitigation
+     links:
+       - "[[index]]"
+       - "[[RULES]]"
+     ---
+     ```
+   - Susun isi dokumen dengan struktur 5 seksi baku:
+     - **1. Tesis Retrospektif (Kilas Balik Kegagalan)**: Penjelasan naratif mengapa rencana ini runtuh dari sudut pandang masa depan.
+     - **2. Failure Modes (Pre-Mortem)**: 3 skenario kegagalan paling realistis beserta probabilitas, rantai kausalitas teknis/psikologis, dan *leading indicator* (tanda bahaya awal).
+     - **3. Unstated Assumptions**: Tabel komparasi (Asumsi Terselubung | Mengapa Rapuh/Cacat | Reality Check & Batasan Riil).
+     - **4. Blindspot Questions**: 5 pertanyaan tajam tanpa kompromi yang wajib dijawab sebelum berkomitmen mengalokasikan waktu/modal.
+     - **5. Actionable Mitigation & Circuit Breakers**: Protokol mitigasi preventif dengan ambang batas kuantitatif tegas (*kill-switch threshold*).
+     - **6. Grounding Vault & Audit Traceability**: Tautan balik ke catatan `journal/`, kontak `crm/`, dan dokumen `wiki/` terkait.
+4. **Rekonsiliasi Indeks & Mesin Pencarian**:
+   - Daftarkan dokumen baru ke [`index.md`](file:///C:/Users/tio/.gemini/antigravity/scratch/second-brain/index.md) dan [`INDEX.md`](file:///C:/Users/tio/.gemini/antigravity/scratch/second-brain/INDEX.md) di bagian *Active Workstreams*.
+   - Jalankan `python tools/indexer.py` agar laporan langsung terindeks di mesin pencarian hybrid.
+5. **Pencatatan Audit Trail**:
+   - Catat operasi ke dalam [`log.md`](file:///C:/Users/tio/.gemini/antigravity/scratch/second-brain/log.md) dengan tipe `WAR_ROOM`.
 
 ---
 

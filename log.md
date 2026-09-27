@@ -22,3 +22,4 @@ Catatan audit log kronologis untuk setiap tindakan:
 | 2026-09-28 00:26 | INGEST | `wiki/hacker-news-signal-ingestion-setup.md` | Extracted from web_20260928_002526_hacker-news.md to wiki/ |
 | 2026-09-28 01:00 | WEEKLY_SYNTHESIS | `journal/weekly_briefings/2026-W40.md` | Autonomous cognitive audit and strategic synthesis for 2026-W40 |
 | 2026-09-28 01:11 | WEAVE | `wiki/synthesis_credit-risk_tactical-football-analytics.md` | Sintesis lintas domain: Credit Risk x Tactical Football Analytics via PROTOKOL 5 |
+| 2026-09-28 01:15 | WAR_ROOM | `in_motion/war_room_rencana_migrasi_pipeline_data.md` | War Room Pre-Mortem stress-test: Rencana Migrasi Pipeline Data via PROTOKOL 6 |
