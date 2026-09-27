@@ -1,7 +1,7 @@
 # Knowledge Network Index & Central MOC
 
 > Auto-generated network map & backlink connectivity matrix.
-> Last updated: `2026-09-27 23:33` | Total Notes: `17`
+> Last updated: `2026-09-27 23:36` | Total Notes: `18`
 
 ---
 
@@ -32,7 +32,7 @@
 ## 3. Structural Knowledge Lattices (`lattices/`)
 
 ### Mental Models & Frameworks
-- [[identity-debugging-walk-protocol\|Identity Debugging Walk & Cognitive Mirror Protocol]] `(0 references)`
+- [[identity-debugging-walk-protocol\|Identity Debugging Walk & Cognitive Mirror Protocol]] `(1 references)`
 
 ### Engineering Playbooks & SOPs
 - [[eval-harness-v1\|Agent Evaluation Harness Architecture Pattern]] `(6 references)`
@@ -55,22 +55,23 @@
 | Target Konsep | Dirujuk Oleh |
 | :--- | :--- |
 | `[[wikilinks]]` | [[README]], [[identity-debugging-walk-protocol]] |
-| `[[unbuilt-feature]]` | [[RULES]] |
 | `[[target-note-slug]]` | [[RULES]] |
+| `[[unbuilt-feature]]` | [[RULES]] |
+| `[[journal/index]]` | [[2026-09-27_lupa-project-rapat]] |
 | `[[Checkpoint Saver]]` | [[langgraph-multi-agent-orchestration-patterns]] |
+| `[[raw/processed/langgraph-agentic-patterns.md]]` | [[langgraph-multi-agent-orchestration-patterns]] |
 | `[[Harrison Chase]]` | [[langgraph-multi-agent-orchestration-patterns]] |
 | `[[StateGraph]]` | [[langgraph-multi-agent-orchestration-patterns]] |
-| `[[raw/processed/langgraph-agentic-patterns.md]]` | [[langgraph-multi-agent-orchestration-patterns]] |
 | `[[LangGraph]]` | [[langgraph-multi-agent-orchestration-patterns]] |
 | `[[INDEX]]` | [[weekly-pulse]] |
 | `[[...]]` | [[identity-debugging-walk-protocol]] |
+| `[[gemini-playbook]]` | [[raw-agent-rag-dump]] |
 | `[[fastapi-playbook]]` | [[raw-agent-rag-dump]] |
 | `[[python-playbook]]` | [[raw-agent-rag-dump]] |
-| `[[agent-playbook]]` | [[raw-agent-rag-dump]] |
 | `[[rag-playbook]]` | [[raw-agent-rag-dump]] |
-| `[[vps-playbook]]` | [[raw-agent-rag-dump]] |
+| `[[agent-playbook]]` | [[raw-agent-rag-dump]] |
 | `[[git-playbook]]` | [[raw-agent-rag-dump]] |
-| `[[gemini-playbook]]` | [[raw-agent-rag-dump]] |
-| `[[headless-browser-automation]]` | [[ai-agent-coupon-promo-indonesia]] |
+| `[[vps-playbook]]` | [[raw-agent-rag-dump]] |
 | `[[coupon-agent-v1]]` | [[ai-agent-coupon-promo-indonesia]] |
+| `[[headless-browser-automation]]` | [[ai-agent-coupon-promo-indonesia]] |
 | `[[ecommerce-validator]]` | [[ai-agent-coupon-promo-indonesia]] |

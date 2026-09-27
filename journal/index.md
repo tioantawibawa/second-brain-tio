@@ -6,4 +6,4 @@ Katalog kronologis seluruh catatan refleksi harian dan jurnal strategis di direk
 
 | Tanggal | Judul Refleksi | Ringkasan 1 Kalimat |
 | :--- | :--- | :--- |
-| _Belum ada entri_ | _Entri baru akan dicatat otomatis_ | _Format: journal/YYYY-MM-DD_[judul-singkat].md_ |
+| 2026-09-27 | [[2026-09-27_lupa-project-rapat\|Mengatasi Kelupaan Komitmen Proyek Rapat]] | Diagnosa cognitive load dan implementasi protokol 60 detik voice dump pasca rapat via Telegram |
