@@ -89,6 +89,9 @@ def scan_vault() -> dict:
             "category": md_file.parent.relative_to(REPO_ROOT).as_posix()
         }
         slug_to_path[slug] = rel_path
+        slug_to_path[rel_path] = rel_path
+        if rel_path.endswith(".md"):
+            slug_to_path[rel_path[:-3]] = rel_path
 
     # Compute backlinks and dangling links
     backlinks = defaultdict(list)
@@ -96,11 +99,19 @@ def scan_vault() -> dict:
     
     for rel_path, note in notes.items():
         for link in note["links"]:
-            if link in slug_to_path:
-                target_path = slug_to_path[link]
+            clean_link = link.replace("\\", "").strip()
+            link_stem = Path(clean_link).stem
+            if clean_link in slug_to_path:
+                target_path = slug_to_path[clean_link]
+                backlinks[target_path].append(rel_path)
+            elif link_stem in slug_to_path:
+                target_path = slug_to_path[link_stem]
+                backlinks[target_path].append(rel_path)
+            elif clean_link in notes or f"{clean_link}.md" in notes:
+                target_path = clean_link if clean_link in notes else f"{clean_link}.md"
                 backlinks[target_path].append(rel_path)
             else:
-                dangling_links[link].append(rel_path)
+                dangling_links[clean_link].append(rel_path)
                 
     return {
         "notes": notes,
@@ -121,9 +132,10 @@ def build_index_md(vault_data: dict) -> Path:
     mental_models = []
     playbooks = []
     triggers = []
-    others = []
-    
     wiki_notes = []
+    crm_contacts = []
+    journal_notes = []
+    others = []
     
     for p, n in sorted(notes.items(), key=lambda x: x[1]["title"]):
         cat = n["category"]
@@ -137,6 +149,10 @@ def build_index_md(vault_data: dict) -> Path:
             mental_models.append(n)
         elif "lattices/playbooks" in cat:
             playbooks.append(n)
+        elif "crm" in cat:
+            crm_contacts.append(n)
+        elif "journal" in cat:
+            journal_notes.append(n)
         elif "system_triggers" in cat:
             triggers.append(n)
         else:
@@ -215,7 +231,37 @@ def build_index_md(vault_data: dict) -> Path:
     md += """
 ---
 
-## 4. System Triggers & Execution Engines (`system_triggers/`)
+## 4. Personal CRM & Key Entities (`crm/`)
+"""
+    if crm_contacts:
+        md += "| Kontak | Jabatan / Keahlian | Outgoing | Backlinks |\n| :--- | :--- | :--- | :--- |\n"
+        for n in crm_contacts:
+            bl_count = len(backlinks.get(n["path"], []))
+            out_count = len(n["links"])
+            role = n["meta"].get("role", "Kontak")
+            md += f"| [[{n['path'][:-3]}\\|{n['title']}]] | {role} | {out_count} | {bl_count} |\n"
+    else:
+        md += "_Belum ada profil CRM terdaftar._\n"
+
+    md += """
+---
+
+## 5. Journal Reflections (`journal/`)
+"""
+    if journal_notes:
+        md += "| Tanggal | Entri Jurnal | Outgoing | Backlinks |\n| :--- | :--- | :--- | :--- |\n"
+        for n in sorted(journal_notes, key=lambda x: x["path"], reverse=True):
+            bl_count = len(backlinks.get(n["path"], []))
+            out_count = len(n["links"])
+            date_str = n["meta"].get("date", n["slug"][:10])
+            md += f"| `{date_str}` | [[{n['path'][:-3]}\\|{n['title']}]] | {out_count} | {bl_count} |\n"
+    else:
+        md += "_Belum ada entri jurnal terdaftar._\n"
+
+    md += """
+---
+
+## 6. System Triggers & Execution Engines (`system_triggers/`)
 """
     for n in triggers:
         md += f"- [[{n['slug']}\\|{n['title']}]]\n"
@@ -223,7 +269,7 @@ def build_index_md(vault_data: dict) -> Path:
     md += """
 ---
 
-## 5. Dangling Links (Unrealized Ideas & Build Seeds)
+## 7. Dangling Links (Unrealized Ideas & Build Seeds)
 > Konsep yang dirujuk dengan `[[wikilinks]]` namun belum dibuat filenya secara fisik. Gunakan ini sebagai backlog ide builder.
 
 """
@@ -237,7 +283,14 @@ def build_index_md(vault_data: dict) -> Path:
 
     index_path = REPO_ROOT / "INDEX.md"
     index_path.write_text(md, encoding="utf-8")
+    index_path_lower = REPO_ROOT / "index.md"
+    try:
+        if index_path_lower.resolve() != index_path.resolve():
+            index_path_lower.write_text(md, encoding="utf-8")
+    except Exception:
+        pass
     return index_path
+
 
 # ================= Local BM25 Semantic Search Engine =================
 

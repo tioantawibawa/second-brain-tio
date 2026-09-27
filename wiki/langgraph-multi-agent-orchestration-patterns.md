@@ -1,8 +1,8 @@
 ---
 title: "Multi-Agent Orchestration Patterns dengan LangGraph"
 source_title: "langgraph-agentic-patterns.md"
-source_url: ""
-author: "Ingested via Second Brain"
+source_url: "https://github.com/langchain-ai/langgraph"
+author: "Harrison Chase"
 ingest_date: 2026-09-27
 tags:
   - wiki
@@ -12,7 +12,7 @@ links:
   - "[[LangGraph]]"
   - "[[StateGraph]]"
   - "[[Checkpoint Saver]]"
-  - "[[Harrison Chase]]"
+  - "[[crm/Harrison-Chase|Harrison Chase]]"
 ---
 
 # Multi-Agent Orchestration Patterns dengan LangGraph
@@ -30,7 +30,7 @@ links:
 | [[LangGraph]] | Wiki Concept | Referensi silang |
 | [[StateGraph]] | Wiki Concept | Referensi silang |
 | [[Checkpoint Saver]] | Wiki Concept | Referensi silang |
-| [[Harrison Chase]] | Wiki Concept | Referensi silang |
+| [[crm/Harrison-Chase\|Harrison Chase]] | Personal CRM | Creator LangGraph |
 
 ---
 

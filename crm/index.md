@@ -6,4 +6,6 @@ Katalog alfabetis profil individu, kolaborator, klien, dan jaringan profesional 
 
 | Nama Lengkap | File Profil | Bio Singkat & Relasi | Topik Terkait (`wiki/`) |
 | :--- | :--- | :--- | :--- |
-| _Belum ada kontak_ | _crm/[Nama-Lengkap].md_ | _Profil baru akan ditambahkan otomatis_ | _[[topik]]_ |
+| Amanda Askell | [[crm/Amanda-Askell\|Amanda Askell]] | Subject Matter Expert / Author | [[analisis-implementasi-prompt-caching-agentic-rag]] |
+| Harrison Chase | [[crm/Harrison-Chase\|Harrison Chase]] | Creator LangChain / LangGraph, Co-Founder & CEO | [[langgraph-multi-agent-orchestration-patterns]] |
+

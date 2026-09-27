@@ -343,8 +343,123 @@ def update_index_catalog(topic_title: str, topic_slug: str, category: str = "Kon
         index_file.write_text(content, encoding="utf-8")
         print(f"[+] Updated index.md with wiki concept: {entry_link}")
 
+def parse_raw_metadata(raw_content: str, default_title: str) -> dict:
+    """
+    Parses metadata frontmatter (YAML or header-style) from a raw markdown file.
+    Ensures Title, Source URL, Channel/Author, and Ingest Date are extracted cleanly.
+    """
+    now_str = datetime.now().strftime("%Y-%m-%d")
+    meta = {
+        "title": default_title,
+        "source_url": "",
+        "author": "Ingested via Second Brain",
+        "ingest_date": now_str,
+        "body": raw_content
+    }
+
+    # 1. Check for YAML frontmatter
+    yaml_match = re.match(r"^---\r?\n(.*?)\r?\n---\r?\n(.*)$", raw_content, re.DOTALL)
+    if yaml_match:
+        yaml_text = yaml_match.group(1)
+        body = yaml_match.group(2)
+        meta["body"] = body.strip()
+        for line in yaml_text.splitlines():
+            line = line.strip()
+            if not line or line.startswith("#") or ":" not in line:
+                continue
+            k, v = line.split(":", 1)
+            k = k.strip().lower()
+            v = v.strip().strip("\"'")
+            if k in ("title",):
+                meta["title"] = v
+            elif k in ("source_url", "source", "url"):
+                meta["source_url"] = v
+            elif k in ("author", "channel", "creator", "speaker"):
+                meta["author"] = v
+            elif k in ("ingest_date", "date"):
+                meta["ingest_date"] = v
+        return meta
+
+    # 2. Line-based header parsing (Title: ..., Source: ..., Author: ..., Channel: ...)
+    lines = raw_content.splitlines()
+    body_lines = []
+    header_mode = True
+    for line in lines:
+        stripped = line.strip()
+        if header_mode and stripped:
+            lower = stripped.lower()
+            if lower.startswith("title:"):
+                meta["title"] = stripped.split(":", 1)[1].strip().strip("\"'")
+                continue
+            elif lower.startswith("source:") or lower.startswith("source url:") or lower.startswith("url:"):
+                meta["source_url"] = stripped.split(":", 1)[1].strip().strip("\"'")
+                continue
+            elif lower.startswith("author:") or lower.startswith("channel:") or lower.startswith("speaker:"):
+                meta["author"] = stripped.split(":", 1)[1].strip().strip("\"'")
+                continue
+            elif lower.startswith("date:") or lower.startswith("ingest date:"):
+                meta["ingest_date"] = stripped.split(":", 1)[1].strip().strip("\"'")
+                continue
+            else:
+                header_mode = False
+                body_lines.append(line)
+        else:
+            if stripped or body_lines:
+                body_lines.append(line)
+
+    meta["body"] = "\n".join(body_lines).strip()
+    return meta
+
+def register_crm_profile(name: str, role: str, org: str, related_topic: str):
+    """Creates a CRM profile and registers in crm/index.md adhering to agents.md PROTOKOL 4."""
+    clean_name = name.strip()
+    file_name = f"{clean_name.replace(' ', '-')}.md"
+    crm_file = REPO_ROOT / "crm" / file_name
+    now_str = datetime.now().strftime("%Y-%m-%d")
+    
+    if not crm_file.exists():
+        content = f"""---
+name: "{clean_name}"
+role: "{role}"
+organization: "{org}"
+interaction_last_date: {now_str}
+tags:
+  - crm
+  - expert
+links:
+  - "{related_topic}"
+---
+
+# {clean_name}
+
+## 1. Bio Singkat & Konteks Relasi
+Profil kontak yang diidentifikasi dari transkrip atau sumber pengetahuan vault.
+
+## 2. Topik & Proyek Terkait (`wiki/` & `in_motion/`)
+- {related_topic}
+
+## 3. Log Interaksi & Keputusan Penting
+- **{now_str}**: Dicatat secara otonom dari proses ingest `raw/`.
+"""
+        crm_file.write_text(content, encoding="utf-8")
+        print(f"[+] Created CRM profile: {crm_file.relative_to(REPO_ROOT)}")
+
+        # Update crm/index.md
+        crm_index = REPO_ROOT / "crm" / "index.md"
+        if crm_index.exists():
+            idx_text = crm_index.read_text(encoding="utf-8")
+            new_row = f"| {clean_name} | [[crm/{clean_name.replace(' ', '-')}|{clean_name}]] | {role} | {related_topic} |\n"
+            if "| _Belum ada kontak_" in idx_text:
+                idx_text = idx_text.replace("| _Belum ada kontak_ | _crm/[Nama-Lengkap].md_ | _Profil baru akan ditambahkan otomatis_ | _[[topik]]_ |\n", "")
+            if f"| {clean_name} |" not in idx_text:
+                idx_text += new_row
+                crm_index.write_text(idx_text, encoding="utf-8")
+                print(f"[+] Registered {clean_name} in crm/index.md")
+
+        append_audit_log("CRM", f"crm/{file_name}", f"Registered {clean_name} profile from raw source")
+
 def ingest_raw_to_wiki(file_path: Path, dry_run: bool = False) -> bool:
-    """Ingests a file from raw/ into wiki/ adhering to agents.md PROTOKOL 1."""
+    """Ingests a file from raw/ into wiki/ adhering strictly to agents.md PROTOKOL 1."""
     if not file_path.exists() or file_path.is_dir():
         return False
         
@@ -355,35 +470,85 @@ def ingest_raw_to_wiki(file_path: Path, dry_run: bool = False) -> bool:
 
     now_str = datetime.now().strftime("%Y-%m-%d")
     clean_stem = slugify(file_path.stem)
+    default_title = file_path.stem.replace("-", " ").title()
     
-    # Extract metadata using ai_engine
+    # 1. Extract metadata from raw content
+    meta = parse_raw_metadata(raw_content, default_title)
+
+    # 2. Extract knowledge using AI engine
     try:
         import ai_engine
-        data, used_model = ai_engine.parse_text_with_ai(raw_content, file_path.name)
+        data, used_model = ai_engine.parse_text_with_ai(meta["body"] if meta["body"] else raw_content, file_path.name)
         print(f"[*] Processed using AI model: {used_model}")
     except Exception as e:
         print(f"[!] AI parsing fallback ({e}).")
-        data = local_heuristic_parse(raw_content, file_path.name)
+        data = local_heuristic_parse(meta["body"] if meta["body"] else raw_content, file_path.name)
 
-    title = data.get("title", file_path.stem.replace("-", " ").title())
+    title = meta["title"] if meta["title"] and meta["title"] != default_title else data.get("title", default_title)
     slug = data.get("slug", clean_stem)
+    source_url = meta.get("source_url", "")
+    author = meta.get("author", "Ingested via Second Brain")
+    ingest_date = meta.get("ingest_date", now_str)
     source_processed_path = f"raw/processed/{file_path.name}"
+
+    # 3. Ensure raw source file has clean YAML frontmatter
+    standard_raw_content = f"""---
+title: "{title}"
+source_url: "{source_url}"
+author: "{author}"
+ingest_date: {ingest_date}
+---
+
+{meta['body']}
+"""
+    if not dry_run:
+        file_path.write_text(standard_raw_content, encoding="utf-8")
+
+    # 4. Process CRM contact if author or key entities represent individuals
+    wiki_links = [f"[[{source_processed_path}]]"]
+    crm_entities = []
     
-    # Build wiki page format with strict agents.md YAML frontmatter
+    if author and author not in ("Ingested via Second Brain", "Unknown", ""):
+        # Check if author name is a person (contains space or specific name pattern)
+        if len(author.split()) >= 2 and not any(k in author.lower() for k in ["channel", "team", "inc", "ai"]):
+            crm_name = author.strip()
+            crm_file = REPO_ROOT / "crm" / f"{crm_name.replace(' ', '-')}.md"
+            if not crm_file.exists():
+                register_crm_profile(crm_name, "Subject Matter Expert / Author", "", f"[[{slug}]]")
+            crm_entities.append(crm_name)
+            wiki_links.append(f"[[crm/{crm_name.replace(' ', '-')}|{crm_name}]]")
+
+    for entity in data.get("key_entities", []):
+        clean_entity = entity.strip("[]")
+        # Check if entity matches known CRM profile or person
+        crm_match = REPO_ROOT / "crm" / f"{clean_entity.replace(' ', '-')}.md"
+        if crm_match.exists():
+            wiki_links.append(f"[[crm/{clean_entity.replace(' ', '-')}|{clean_entity}]]")
+        else:
+            wiki_links.append(f"[[{clean_entity}]]")
+
+    # Deduplicate links preserving order
+    seen_links = set()
+    deduped_links = []
+    for l in wiki_links:
+        if l not in seen_links:
+            seen_links.add(l)
+            deduped_links.append(l)
+
+    # 5. Build wiki page format with strict agents.md YAML frontmatter
     wiki_content = f"""---
 title: "{title}"
 source_title: "{file_path.name}"
-source_url: ""
-author: "Ingested via Second Brain"
-ingest_date: {now_str}
+source_url: "{source_url}"
+author: "{author}"
+ingest_date: {ingest_date}
 tags:
   - wiki
   - knowledge-compilation
 links:
-  - "[[{source_processed_path}]]"
 """
-    for entity in data.get("key_entities", []):
-        wiki_content += f'  - "{entity}"\n'
+    for l in deduped_links:
+        wiki_content += f'  - "{l}"\n'
     wiki_content += f"""---
 
 # {title}
@@ -397,8 +562,12 @@ links:
 | Entitas / Tool | Tipe | Relevansi |
 | :--- | :--- | :--- |
 """
-    for entity in data.get("key_entities", []):
-        wiki_content += f"| {entity} | Wiki Concept | Referensi silang |\n"
+    for l in deduped_links:
+        if "raw/processed" in l:
+            continue
+        ent_label = l.strip("[]").split("|")[-1]
+        t_type = "Personal CRM" if "crm/" in l else "Wiki Concept"
+        wiki_content += f"| {l} | {t_type} | Referensi silang |\n"
 
     wiki_content += f"""
 ---
@@ -426,7 +595,7 @@ links:
     update_index_catalog(title, slug)
     append_audit_log("INGEST", f"wiki/{slug}.md", f"Extracted from {file_path.name} to wiki/")
 
-    # Move to raw/processed/
+    # Move source file to raw/processed/
     dest_processed = REPO_ROOT / "raw" / "processed" / file_path.name
     file_path.rename(dest_processed)
     print(f"[+] Moved source file to: {dest_processed.relative_to(REPO_ROOT)}")
@@ -453,6 +622,17 @@ def main():
         print(f"[*] Found {len(items)} file(s) in raw/...")
         for it in items:
             ingest_raw_to_wiki(it, dry_run=args.dry_run)
+            
+        # Reconcile index network map
+        if not args.dry_run:
+            try:
+                import graph_index
+                vault_data = graph_index.scan_vault()
+                graph_index.build_index_md(vault_data)
+                print("[+] Reconciled master index with network backlink matrix.")
+            except Exception as e:
+                print(f"[!] Graph index build error: {e}")
+
     elif args.file:
         file_path = Path(args.file)
         if not file_path.is_absolute():

@@ -1,7 +1,7 @@
 # Knowledge Network Index & Central MOC
 
 > Auto-generated network map & backlink connectivity matrix.
-> Last updated: `2026-09-27 23:36` | Total Notes: `18`
+> Last updated: `2026-09-27 23:44` | Total Notes: `23`
 
 ---
 
@@ -16,7 +16,7 @@
 | Project / Agent | Status | Outgoing | Backlinks |
 | :--- | :--- | :--- | :--- |
 | [[ai-agent-coupon-promo-indonesia\|AI Agent Pencari dan Penguji Coupon Promo Indonesia]] | `incubating` | 3 | 2 |
-| [[autonomous-agent-eval-harness\|Autonomous Agent Evaluation Harness & Benchmark Suite]] | `active` | 1 | 2 |
+| [[autonomous-agent-eval-harness\|Autonomous Agent Evaluation Harness & Benchmark Suite]] | `active` | 1 | 3 |
 | [[autonomous-crossborder-dropship-agent\|Autonomous Cross-Border Dropshipping Agent: ID to JP/KR Marketplace Engine]] | `active` | 0 | 1 |
 
 ---
@@ -24,7 +24,8 @@
 ## 2. Knowledge Wiki & Topic Syntheses (`wiki/`)
 | Konsep / Entitas | Outgoing | Backlinks |
 | :--- | :--- | :--- |
-| [[langgraph-multi-agent-orchestration-patterns\|Multi-Agent Orchestration Patterns dengan LangGraph]] | 5 | 1 |
+| [[analisis-implementasi-prompt-caching-agentic-rag\|Evaluasi Prompt Caching dan Context Window Compression]] | 5 | 1 |
+| [[langgraph-multi-agent-orchestration-patterns\|Multi-Agent Orchestration Patterns dengan LangGraph]] | 6 | 2 |
 | [[penanganan-degradasi-model-scoring-data-musiman\|Strategi Penanganan Degradasi Performa Model Scoring pada Pergeseran Data Musiman]] | 5 | 0 |
 
 ---
@@ -42,14 +43,29 @@
 
 ---
 
-## 4. System Triggers & Execution Engines (`system_triggers/`)
+## 4. Personal CRM & Key Entities (`crm/`)
+| Kontak | Jabatan / Keahlian | Outgoing | Backlinks |
+| :--- | :--- | :--- | :--- |
+| [[crm/Amanda-Askell\|Amanda Askell]] | Subject Matter Expert / Author | 1 | 1 |
+| [[crm/Harrison-Chase\|Harrison Chase]] | Creator & Co-Founder / CEO | 2 | 2 |
+
+---
+
+## 5. Journal Reflections (`journal/`)
+| Tanggal | Entri Jurnal | Outgoing | Backlinks |
+| :--- | :--- | :--- | :--- |
+| `2026-09-27` | [[journal/2026-09-27_lupa-project-rapat\|Mengatasi Kelupaan Komitmen Proyek dari Rapat]] | 5 | 0 |
+
+---
+
+## 6. System Triggers & Execution Engines (`system_triggers/`)
 - [[weekly-pulse\|Weekly Pulse & Delivery Review Trigger]]
 - [[tmpl_in_motion\|{{TITLE}}]]
 - [[tmpl_lattice\|{{TITLE}}]]
 
 ---
 
-## 5. Dangling Links (Unrealized Ideas & Build Seeds)
+## 7. Dangling Links (Unrealized Ideas & Build Seeds)
 > Konsep yang dirujuk dengan `[[wikilinks]]` namun belum dibuat filenya secara fisik. Gunakan ini sebagai backlog ide builder.
 
 | Target Konsep | Dirujuk Oleh |
@@ -58,20 +74,21 @@
 | `[[target-note-slug]]` | [[RULES]] |
 | `[[unbuilt-feature]]` | [[RULES]] |
 | `[[journal/index]]` | [[2026-09-27_lupa-project-rapat]] |
-| `[[Checkpoint Saver]]` | [[langgraph-multi-agent-orchestration-patterns]] |
-| `[[raw/processed/langgraph-agentic-patterns.md]]` | [[langgraph-multi-agent-orchestration-patterns]] |
-| `[[Harrison Chase]]` | [[langgraph-multi-agent-orchestration-patterns]] |
+| `[[Prompt Caching]]` | [[analisis-implementasi-prompt-caching-agentic-rag]] |
+| `[[GPU VRAM Memory Pinning]]` | [[analisis-implementasi-prompt-caching-agentic-rag]] |
+| `[[TTFT Optimization]]` | [[analisis-implementasi-prompt-caching-agentic-rag]] |
 | `[[StateGraph]]` | [[langgraph-multi-agent-orchestration-patterns]] |
+| `[[Checkpoint Saver]]` | [[langgraph-multi-agent-orchestration-patterns]] |
 | `[[LangGraph]]` | [[langgraph-multi-agent-orchestration-patterns]] |
 | `[[INDEX]]` | [[weekly-pulse]] |
 | `[[...]]` | [[identity-debugging-walk-protocol]] |
-| `[[gemini-playbook]]` | [[raw-agent-rag-dump]] |
-| `[[fastapi-playbook]]` | [[raw-agent-rag-dump]] |
+| `[[vps-playbook]]` | [[raw-agent-rag-dump]] |
 | `[[python-playbook]]` | [[raw-agent-rag-dump]] |
+| `[[gemini-playbook]]` | [[raw-agent-rag-dump]] |
 | `[[rag-playbook]]` | [[raw-agent-rag-dump]] |
 | `[[agent-playbook]]` | [[raw-agent-rag-dump]] |
+| `[[fastapi-playbook]]` | [[raw-agent-rag-dump]] |
 | `[[git-playbook]]` | [[raw-agent-rag-dump]] |
-| `[[vps-playbook]]` | [[raw-agent-rag-dump]] |
-| `[[coupon-agent-v1]]` | [[ai-agent-coupon-promo-indonesia]] |
 | `[[headless-browser-automation]]` | [[ai-agent-coupon-promo-indonesia]] |
+| `[[coupon-agent-v1]]` | [[ai-agent-coupon-promo-indonesia]] |
 | `[[ecommerce-validator]]` | [[ai-agent-coupon-promo-indonesia]] |

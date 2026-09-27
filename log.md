@@ -15,3 +15,6 @@ Catatan audit log kronologis untuk setiap tindakan:
 | 2026-09-27 23:30 | INGEST | `wiki/langgraph-multi-agent-orchestration-patterns.md` | Extracted from langgraph-agentic-patterns.md to wiki/ |
 | 2026-09-27 23:34 | QUERY_COMPOUND | `wiki/penanganan-degradasi-model-scoring-data-musiman.md` | Compounded new synthesis: Strategi Penanganan Degradasi Performa Model Scoring pada Pergeseran Data Musiman |
 | 2026-09-27 23:35 | JOURNAL | `journal/2026-09-27_lupa-project-rapat.md` | Recorded reflection & tactical solution on meeting project tracking |
+| 2026-09-27 23:40 | CRM | `crm/Harrison-Chase.md` | Created profile for Harrison Chase (LangChain / LangGraph) linked from wiki |
+| 2026-09-27 23:43 | CRM | `crm/Amanda-Askell.md` | Registered Amanda Askell profile from raw source |
+| 2026-09-27 23:43 | INGEST | `wiki/analisis-implementasi-prompt-caching-agentic-rag.md` | Extracted from test-prompt-engineering.md to wiki/ |

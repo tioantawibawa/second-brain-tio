@@ -1,6 +1,9 @@
-Title: Multi-Agent Orchestration Patterns with LangGraph
-Source: https://github.com/langchain-ai/langgraph
-Author: Harrison Chase
+---
+title: "Multi-Agent Orchestration Patterns with LangGraph"
+source_url: "https://github.com/langchain-ai/langgraph"
+author: "Harrison Chase"
+ingest_date: 2026-09-27
+---
 
 Konsep penting:
 LangGraph memperkenalkan arsitektur stateful multi-agent berbasis Cyclic Graph.
