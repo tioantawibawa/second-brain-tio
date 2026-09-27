@@ -519,6 +519,7 @@ links:
     # Invoke vault sync
     trigger_vault_sync()
     print(f"\n[+] Autonomous weekly cognitive audit completed successfully for {week_id}!\n")
+    return target_file, audit
 
 def main():
     import argparse

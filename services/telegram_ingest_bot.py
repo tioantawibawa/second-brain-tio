@@ -630,6 +630,83 @@ def format_bot_ingest() -> str:
     except Exception as e:
         return f"❌ *Gagal memproses ingest:* `{e}`"
 
+def format_bot_weekly() -> str:
+    try:
+        sys.path.insert(0, str(REPO_ROOT / "tools"))
+        import weekly_synthesis
+        
+        target_file, audit = weekly_synthesis.run_weekly_synthesis(dry_run=False)
+        
+        now = datetime.now()
+        year, week_num, _ = now.isocalendar()
+        week_id = f"{year}-W{week_num:02d}"
+        
+        wins = audit.get("wins", [])
+        wins_text = "\n".join([f"• {w}" for w in wins[:3]]) if wins else "• Eksekusi sistem berjalan lancar."
+        
+        obstacles = audit.get("recurring_obstacles", [])
+        obs_text = "\n".join([f"⚠️ {o}" for o in obstacles[:3]]) if obstacles else "• Tidak ada hambatan berulang yang terdeteksi."
+        
+        conflicts = audit.get("cognitive_conflicts", [])
+        conf_text = "\n".join([f"⚡ {c}" for c in conflicts[:2]]) if conflicts else "• Tidak ada kontradiksi prinsip signifikan."
+        
+        tactics = audit.get("tactical_recommendations", [])
+        tact_text = "\n".join([f"{idx}. *{t}*" for idx, t in enumerate(tactics[:3], 1)]) if tactics else "1. Pertahankan konsistensi jurnal.\n2. Review deliverable aktif."
+        
+        reply = (
+            f"🧠 *AUDIT KOGNITIF MINGGUAN ({week_id})*\n"
+            f"📅 _Evaluasi Jurnal & Sistem 7 Hari Terakhir_\n\n"
+            f"🏆 *Wins & Strategic Progress:*\n{wins_text}\n\n"
+            f"🚧 *Hambatan Berulang (Recurring Obstacles):*\n{obs_text}\n\n"
+            f"⚔️ *Friksi & Kontradiksi Kognitif:*\n{conf_text}\n\n"
+            f"🎯 *3 Rekomendasi Taktis Minggu Depan:*\n{tact_text}\n\n"
+            f"📁 *Dokumen lengkap:* `journal/weekly_briefings/{week_id}.md`\n"
+            f"📖 Baca full: `/read {week_id}`"
+        )
+        return reply
+    except Exception as e:
+        logger.error(f"Error in format_bot_weekly: {e}")
+        return f"❌ *Gagal menjalankan Audit Mingguan:* `{e}`"
+
+def format_bot_sync() -> str:
+    try:
+        sys.path.insert(0, str(REPO_ROOT / "tools"))
+        idx_msg = "✅ Search index (BM25 + Semantic) up-to-date."
+        try:
+            import indexer
+            indexer.build_index(verbose=False)
+        except Exception as e:
+            idx_msg = f"⚠️ Indexer: {e}"
+
+        import subprocess
+        git_steps = []
+        subprocess.run(["git", "add", "."], cwd=str(REPO_ROOT), capture_output=True, text=True, timeout=20)
+        diff = subprocess.run(["git", "diff", "--cached", "--quiet"], cwd=str(REPO_ROOT))
+        if diff.returncode != 0:
+            now_str = datetime.now().strftime("%Y-%m-%d %H:%M")
+            subprocess.run(["git", "commit", "-m", f"chore(sync): automated sync via telegram {now_str}"], cwd=str(REPO_ROOT), capture_output=True, text=True)
+            git_steps.append(f"📦 Local commit dibuat: `{now_str}`")
+        else:
+            git_steps.append("📦 Vault lokal sudah bersih (up-to-date).")
+
+        push = subprocess.run(["git", "push", "origin", "main"], cwd=str(REPO_ROOT), capture_output=True, text=True, timeout=25)
+        if push.returncode == 0:
+            git_steps.append("🚀 Pushed ke GitHub origin/main.")
+        else:
+            err_line = (push.stderr or push.stdout or "Push terminal bypass active").strip()[:80]
+            git_steps.append(f"ℹ️ Git Push: `{err_line}`")
+
+        sync_summary = "\n".join(git_steps)
+        reply = (
+            f"🔄 *VAULT MULTI-DEVICE SYNCHRONIZATION*\n\n"
+            f"{idx_msg}\n\n"
+            f"{sync_summary}\n\n"
+            f"💡 *Obsidian PC*: Jalankan `sync_vault.ps1` atau `git pull` di PC untuk menerima pembaruan ini."
+        )
+        return reply
+    except Exception as e:
+        return f"❌ *Gagal melakukan sinkronisasi:* `{e}`"
+
 def format_bot_help() -> str:
     return (
         "🧠 *Panduan Second Brain Telegram Ingest Bot*\n\n"
@@ -641,12 +718,15 @@ def format_bot_help() -> str:
         "• `/ingest` - Proses seluruh file mentah di `raw/` ke `wiki/` dan profil `crm/`\n\n"
         "⚔️ *Operasi Strategis & Kognitif:*\n"
         "• `/warroom <keputusan>` - Jalankan War Room Pre-Mortem Red Team untuk menguji risiko rencana Anda\n"
-        "• `/weave <Domain A> x <Domain B>` - Sintesis analogi struktural lintas domain\n\n"
+        "• `/weave <Domain A> x <Domain B>` - Sintesis analogi struktural lintas domain\n"
+        "• `/weekly` - Jalankan Audit Kognitif Mingguan (evaluasi hambatan & 3 rekomendasi taktis)\n\n"
+        "🔄 *Sinkronisasi & Pemeliharaan:*\n"
+        "• `/sync` - Sinkronkan vault dengan remote Git dan perbarui search index\n"
+        "• `/status` - Cek kesehatan sistem & database\n\n"
         "🔎 *Perintah Interaktif:*\n"
         "• `/search <kueri>` - Cari catatan via Hybrid Search (BM25 + Vektor)\n"
         "• `/list` - Tampilkan daftar catatan terbaru dengan tombol baca\n"
         "• `/read <nama_file>` - Baca catatan langsung di Telegram\n"
-        "• `/status` - Cek kesehatan sistem & database\n"
         "• `/help` - Tampilkan bantuan ini"
     )
 
@@ -728,6 +808,22 @@ async def ptb_ingest(update: Update, context: ContextTypes.DEFAULT_TYPE):
     reply = format_bot_ingest()
     await msg.edit_text(reply, parse_mode="Markdown")
 
+async def ptb_weekly(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = str(update.effective_user.id)
+    if ALLOWED_USER_ID and user_id != str(ALLOWED_USER_ID):
+        return
+    msg = await update.message.reply_text("🧠 *Menjalankan Audit Kognitif Mingguan...*", parse_mode="Markdown")
+    reply = format_bot_weekly()
+    await msg.edit_text(reply, parse_mode="Markdown")
+
+async def ptb_sync(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = str(update.effective_user.id)
+    if ALLOWED_USER_ID and user_id != str(ALLOWED_USER_ID):
+        return
+    msg = await update.message.reply_text("🔄 *Menjalankan sinkronisasi multi-perangkat...*", parse_mode="Markdown")
+    reply = format_bot_sync()
+    await msg.edit_text(reply, parse_mode="Markdown")
+
 async def ptb_handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.effective_user.id)
     if ALLOWED_USER_ID and user_id != str(ALLOWED_USER_ID):
@@ -787,6 +883,16 @@ async def ptb_handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     elif text == "/status":
         await update.message.reply_text(format_bot_status(), parse_mode="Markdown")
+        return
+    elif text in ("/weekly", "/audit"):
+        msg = await update.message.reply_text("🧠 *Menjalankan Audit Kognitif Mingguan...*", parse_mode="Markdown")
+        reply = format_bot_weekly()
+        await msg.edit_text(reply, parse_mode="Markdown")
+        return
+    elif text == "/sync":
+        msg = await update.message.reply_text("🔄 *Menjalankan sinkronisasi multi-perangkat...*", parse_mode="Markdown")
+        reply = format_bot_sync()
+        await msg.edit_text(reply, parse_mode="Markdown")
         return
 
     res = process_incoming_text(text)
@@ -850,6 +956,9 @@ def run_ptb():
     app.add_handler(CommandHandler("premortem", ptb_warroom))
     app.add_handler(CommandHandler("weave", ptb_weave))
     app.add_handler(CommandHandler("ingest", ptb_ingest))
+    app.add_handler(CommandHandler("weekly", ptb_weekly))
+    app.add_handler(CommandHandler("audit", ptb_weekly))
+    app.add_handler(CommandHandler("sync", ptb_sync))
     app.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), ptb_handle_text))
     app.add_handler(MessageHandler(filters.VOICE | filters.AUDIO, ptb_handle_voice))
     
@@ -940,6 +1049,14 @@ def run_builtin_fallback():
                         chunks = format_bot_read(slug)
                         for c in chunks:
                             send_tg_msg(chat_id, c)
+                        continue
+                    elif text in ("/weekly", "/audit"):
+                        send_tg_msg(chat_id, "🧠 *Menjalankan Audit Kognitif Mingguan...*")
+                        send_tg_msg(chat_id, format_bot_weekly())
+                        continue
+                    elif text == "/sync":
+                        send_tg_msg(chat_id, "🔄 *Menjalankan sinkronisasi multi-perangkat...*")
+                        send_tg_msg(chat_id, format_bot_sync())
                         continue
                         
                     res = process_incoming_text(text)
