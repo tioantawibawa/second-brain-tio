@@ -509,8 +509,8 @@ ingest_date: {ingest_date}
     crm_entities = []
     
     if author and author not in ("Ingested via Second Brain", "Unknown", ""):
-        # Check if author name is a person (contains space or specific name pattern)
-        if len(author.split()) >= 2 and not any(k in author.lower() for k in ["channel", "team", "inc", "ai"]):
+        # Check if author name is a person (contains space and not a bot/organization)
+        if len(author.split()) >= 2 and not any(k in author.lower() for k in ["channel", "team", "inc", "ai", "bot", "system", "ingest", "gateway"]):
             crm_name = author.strip()
             crm_file = REPO_ROOT / "crm" / f"{crm_name.replace(' ', '-')}.md"
             if not crm_file.exists():

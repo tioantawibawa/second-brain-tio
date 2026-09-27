@@ -1,7 +1,7 @@
 # Knowledge Network Index & Central MOC
 
 > Auto-generated network map & backlink connectivity matrix.
-> Last updated: `2026-09-27 23:44` | Total Notes: `23`
+> Last updated: `2026-09-28 00:27` | Total Notes: `25`
 
 ---
 
@@ -25,6 +25,7 @@
 | Konsep / Entitas | Outgoing | Backlinks |
 | :--- | :--- | :--- |
 | [[analisis-implementasi-prompt-caching-agentic-rag\|Evaluasi Prompt Caching dan Context Window Compression]] | 5 | 1 |
+| [[hacker-news-signal-ingestion-setup\|Hacker News]] | 5 | 0 |
 | [[langgraph-multi-agent-orchestration-patterns\|Multi-Agent Orchestration Patterns dengan LangGraph]] | 6 | 2 |
 | [[penanganan-degradasi-model-scoring-data-musiman\|Strategi Penanganan Degradasi Performa Model Scoring pada Pergeseran Data Musiman]] | 5 | 0 |
 
@@ -54,6 +55,7 @@
 ## 5. Journal Reflections (`journal/`)
 | Tanggal | Entri Jurnal | Outgoing | Backlinks |
 | :--- | :--- | :--- | :--- |
+| `quick_capt` | [[journal/quick_captures\|Quick Captures & Fleeting Thoughts]] | 0 | 0 |
 | `2026-09-27` | [[journal/2026-09-27_lupa-project-rapat\|Mengatasi Kelupaan Komitmen Proyek dari Rapat]] | 5 | 0 |
 
 ---
@@ -71,24 +73,28 @@
 | Target Konsep | Dirujuk Oleh |
 | :--- | :--- |
 | `[[wikilinks]]` | [[README]], [[identity-debugging-walk-protocol]] |
-| `[[target-note-slug]]` | [[RULES]] |
 | `[[unbuilt-feature]]` | [[RULES]] |
+| `[[target-note-slug]]` | [[RULES]] |
 | `[[journal/index]]` | [[2026-09-27_lupa-project-rapat]] |
 | `[[Prompt Caching]]` | [[analisis-implementasi-prompt-caching-agentic-rag]] |
 | `[[GPU VRAM Memory Pinning]]` | [[analisis-implementasi-prompt-caching-agentic-rag]] |
 | `[[TTFT Optimization]]` | [[analisis-implementasi-prompt-caching-agentic-rag]] |
+| `[[crm/Web-Ingest-Bot]]` | [[hacker-news-signal-ingestion-setup]] |
+| `[[signal-ingestion-pipeline]]` | [[hacker-news-signal-ingestion-setup]] |
+| `[[tech-radar-v2]]` | [[hacker-news-signal-ingestion-setup]] |
+| `[[hacker-news-api]]` | [[hacker-news-signal-ingestion-setup]] |
+| `[[LangGraph]]` | [[langgraph-multi-agent-orchestration-patterns]] |
 | `[[StateGraph]]` | [[langgraph-multi-agent-orchestration-patterns]] |
 | `[[Checkpoint Saver]]` | [[langgraph-multi-agent-orchestration-patterns]] |
-| `[[LangGraph]]` | [[langgraph-multi-agent-orchestration-patterns]] |
 | `[[INDEX]]` | [[weekly-pulse]] |
 | `[[...]]` | [[identity-debugging-walk-protocol]] |
-| `[[vps-playbook]]` | [[raw-agent-rag-dump]] |
 | `[[python-playbook]]` | [[raw-agent-rag-dump]] |
-| `[[gemini-playbook]]` | [[raw-agent-rag-dump]] |
-| `[[rag-playbook]]` | [[raw-agent-rag-dump]] |
-| `[[agent-playbook]]` | [[raw-agent-rag-dump]] |
 | `[[fastapi-playbook]]` | [[raw-agent-rag-dump]] |
+| `[[agent-playbook]]` | [[raw-agent-rag-dump]] |
+| `[[vps-playbook]]` | [[raw-agent-rag-dump]] |
+| `[[rag-playbook]]` | [[raw-agent-rag-dump]] |
 | `[[git-playbook]]` | [[raw-agent-rag-dump]] |
-| `[[headless-browser-automation]]` | [[ai-agent-coupon-promo-indonesia]] |
+| `[[gemini-playbook]]` | [[raw-agent-rag-dump]] |
 | `[[coupon-agent-v1]]` | [[ai-agent-coupon-promo-indonesia]] |
 | `[[ecommerce-validator]]` | [[ai-agent-coupon-promo-indonesia]] |
+| `[[headless-browser-automation]]` | [[ai-agent-coupon-promo-indonesia]] |

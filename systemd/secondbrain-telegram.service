@@ -1,0 +1,15 @@
+[Unit]
+Description=Second Brain Telegram Ingest Bot Daemon
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu/second-brain
+ExecStart=/usr/bin/python3 /home/ubuntu/second-brain/services/telegram_ingest_bot.py
+Restart=always
+RestartSec=10
+EnvironmentFile=/home/ubuntu/second-brain/.env
+
+[Install]
+WantedBy=multi-user.target
