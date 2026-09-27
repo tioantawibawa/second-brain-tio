@@ -158,12 +158,26 @@ python3 tools/search.py "model drift musiman" --mode vector   # Khusus kemiripan
 python3 tools/search.py "LangGraph agent" --json              # Output JSON untuk otomasi
 ```
 
+### C. Menjalankan Pencarian di Telegram:
+Ketik langsung di chat bot:
+```text
+/search <kata kunci>
+```
+*Contoh:* `/search credit scoring musiman` atau `/search pre-mortem kill switch`
+
+**Fitur Interaktif di Telegram:**
+- Bot mengembalikan 3 hasil paling relevan dengan path file dan cuplikan intisari.
+- Bot menyediakan tombol baca interaktif berformat: `/read_<slug>` (contoh: `/read_credit_scoring_musiman`).
+- Cukup **klik link `/read_...` tersebut**, dan bot langsung menampilkan seluruh isi dokumen Markdown di Telegram!
+- Ingin melihat daftar catatan terbaru? Ketik `/list`.
+
 ---
 
 ## 🧠 6. Fitur Audit Kognitif Mingguan (`tools/weekly_synthesis.py`)
 
 Berjalan otomatis via cron job setiap **Minggu malam pukul 23:00** untuk membedah dinamika kognitif Anda selama 7 hari terakhir.
 
+### A. Eksekusi via CLI:
 ```bash
 # Menjalankan audit kognitif mingguan secara manual:
 python3 tools/weekly_synthesis.py
@@ -172,13 +186,19 @@ python3 tools/weekly_synthesis.py
 python3 tools/weekly_synthesis.py --install-cron
 ```
 
-**Output Deliverable:**  
-Menghasilkan briefing strategis di [`journal/weekly_briefings/YYYY-W[Minggu_ke].md`](file:///C:/Users/tio/.gemini/antigravity/scratch/second-brain/journal/weekly_briefings/2026-W40.md) dengan analisis:
-1. **Wins & Progress**: Milestone dan pencapaian deliverable aktif.
-2. **Recurring Obstacles**: Hambatan berulang tanpa tindakan nyata yang terdeteksi di catatan jurnal.
-3. **Cognitive Conflicts**: Kontradiksi antara apa yang ditulis di jurnal dengan prinsip arsitektur sistem.
-4. **Orphan Concepts Detector**: Mendeteksi catatan di `wiki/` yang memiliki 0 tautan masuk (*backlinks*) agar tidak menjadi konsep mati.
-5. **3 Rekomendasi Taktis**: Aksi prioritas untuk 7 hari ke depan.
+### B. Eksekusi via Telegram:
+Ketik di chat bot kapan saja saat Anda ingin melakukan refleksi:
+```text
+/weekly
+```
+*(Atau alias: `/audit`)*
+
+**Yang Dikembalikan Bot ke Telegram:**
+- 🏆 **Wins & Strategic Progress**: Pencapaian dan progres deliverable selama 7 hari terakhir.
+- 🚧 **Recurring Obstacles**: Hambatan mental atau keluhan berulang tanpa eksekusi.
+- ⚔️ **Cognitive Conflicts**: Friksi antara apa yang dicatat di jurnal dengan prinsip arsitektur sistem.
+- 🎯 **3 Rekomendasi Taktis**: Tiga langkah prioritas untuk minggu depan.
+- 📖 Tautan langsung untuk membaca laporan lengkap: `/read YYYY_W[Minggu_ke]`.
 
 ---
 
@@ -186,6 +206,7 @@ Menghasilkan briefing strategis di [`journal/weekly_briefings/YYYY-W[Minggu_ke].
 
 Menghubungkan dua bidang ilmu yang tampak tidak berkaitan untuk mengekstrak analogi struktural tingkat tinggi (*structural isomorphism*) dan mentransfer 3 solusi konkret.
 
+### A. Eksekusi via CLI:
 ```bash
 # Menjalankan sintesis lintas domain:
 python3 tools/weave.py "Credit Risk" "Tactical Football Analytics"
@@ -195,13 +216,20 @@ python3 tools/weave.py "Data Architecture" "Behavioral Economics"
 python3 tools/weave.py "Distributed Systems" "Evolutionary Biology" --dry-run
 ```
 
-**Output Deliverable:**  
-Menghasilkan file di [`wiki/synthesis_[TopikA]_[TopikB].md`](file:///C:/Users/tio/.gemini/antigravity/scratch/second-brain/wiki/synthesis_credit-risk_tactical-football-analytics.md):
-- **Tesis Analogi**: Penjelasan sistemik mengapa kedua domain tersebut isomorfik.
-- **Matriks Isomorfik**: Tabel komparasi dimensi sistem.
-- **3 Transfer Ilmu Konkret**: Solusi teknis bagaimana disiplin B memecahkan masalah kronis di domain A.
-- **Implikasi Eksekusi**: Rekomendasi playbook dan prototipe di `in_motion/`.
-- Otomatis terhubung ke MOC Index dan database pencarian SQLite.
+### B. Eksekusi via Telegram:
+Ketik di chat bot menggunakan format `x`, `dan`, atau `&`:
+```text
+/weave <Domain A> x <Domain B>
+```
+*Contoh:*
+- `/weave Credit Risk x Tactical Football Analytics`
+- `/weave Data Architecture x Behavioral Economics`
+- `/weave Distributed Systems x Evolutionary Biology`
+
+**Yang Dikembalikan Bot ke Telegram:**
+- 📌 **Tesis Isomorfik**: Ringkasan keselarasan struktural antara kedua domain.
+- 🚀 **Transfer Solusi Konkret**: 3 transfer ilmu dan inovasi teknis yang bisa diterapkan.
+- 📁 Disimpan otomatis di `wiki/synthesis_[A]_[B].md` dan siap dibaca via `/read`.
 
 ---
 
@@ -209,6 +237,7 @@ Menghasilkan file di [`wiki/synthesis_[TopikA]_[TopikB].md`](file:///C:/Users/ti
 
 Melakukan stress-test agresif tanpa kompromi (*zero-sugarcoating*) terhadap keputusan kritis atau rencana proyek besar sebelum Anda mengeksekusinya.
 
+### A. Eksekusi via CLI:
 ```bash
 # Menjalankan War Room Pre-Mortem:
 python3 tools/war_room.py "Rencana migrasi pipeline data"
@@ -219,61 +248,61 @@ python3 tools/war_room.py "Pengambilan proyek konsultasi arsitektur perbankan"
 python3 tools/war_room.py "Peluncuran produk AI baru" --dry-run
 ```
 
-**Grounding Vault Otomatis:**
-- Menelusuri `journal/` untuk menemukan bias kognitif dan titik stres masa lalu (*cognitive overflow, lupa komitmen rapat*).
-- Menelusuri `crm/` untuk menemukan kontak relevan yang dapat dijadikan *sounding board* kritis.
-- Menelusuri `wiki/` & `lattices/` untuk menemukan batasan teknis dan SLA latensi.
-
-**Output Deliverable:**  
-Menghasilkan dokumen analisis di [`in_motion/war_room_[nama_proyek].md`](file:///C:/Users/tio/.gemini/antigravity/scratch/second-brain/in_motion/war_room_rencana_migrasi_pipeline_data.md):
-- **Tesis Retrospektif**: Analisis dari masa depan mengapa proyek ini hancur total jika dieksekusi tanpa pengaman.
-- **3 Failure Modes**: Skenario kegagalan paling realistis beserta *leading indicator* (tanda bahaya awal).
-- **Unstated Assumptions Table**: Asumsi terselubung vs fakta lapangan yang membantahnya.
-- **5 Blindspot Questions**: Pertanyaan tanpa kompromi yang wajib Anda jawab.
-- **Actionable Mitigations**: Protokol mitigasi dengan batas kuantitatif tegas (*kill-switch thresholds*, misal: PSI > 0.20, Latensi > 1500ms).
+### B. Eksekusi via Telegram:
+Gunakan perintah `/warroom` atau prefix trigger:
+```text
+/warroom Menerima proyek konsultasi enterprise senilai Rp 150 juta dengan penalti keterlambatan
+```
+*(Atau ketik pesan berawalan: `war room:`, `pre-mortem:`, atau `uji keputusan:`)*
 
 ---
 
-## 🔄 9. Fitur Sync: Sinkronisasi Multi-Perangkat (VPS $\leftrightarrow$ PC)
+## 🔄 9. Fitur Sync: Sinkronisasi Multi-Perangkat (VPS ↔ PC)
 
 Menjaga keselarasan catatan antara VPS dan Obsidian di PC lokal tanpa konflik Git.
 
-### Dari PC Lokal (Windows PowerShell):
-```powershell
-# Jalankan skrip sinkronisasi otomatis:
-.\sync_vault.ps1
-
-# Atau manual:
-git add .
-git commit -m "chore(sync): update notes from local"
-git push origin main
+### A. Sinkronisasi via Telegram:
+Ketik langsung di chat bot:
+```text
+/sync
 ```
+**Yang Dilakukan Bot Secara Otomatis:**
+1. Memperbarui database pencarian hybrid (`vault_search.db`).
+2. Melakukan `git add` & `git commit` atas seluruh catatan baru / voice note / laporan pre-mortem di VPS.
+3. Melakukan `git push origin main` ke repositori GitHub.
 
-### Dari VPS Ubuntu:
+### B. Sinkronisasi di PC Lokal (Obsidian):
+Jalankan di PowerShell PC lokal di dalam folder `second-brain`:
+```powershell
+.\sync_vault.ps1
+```
+*(Atau `git pull origin main`). Seluruh catatan baru, transkrip voice notes, dan laporan analisis langsung muncul rapi di Obsidian!*
+
+### C. Sinkronisasi Manual dari VPS:
 ```bash
-# Jalankan skrip sinkronisasi otomatis:
 ./sync_vault.sh
-
-# Atau manual:
-git pull origin main
-python3 tools/indexer.py
+# Atau:
+git pull origin main && python3 tools/indexer.py
 ```
 
 ---
 
-## 📋 10. Cheat Sheet Ringkasan Perintah CLI
+## 📋 10. Cheat Sheet Ringkasan Perintah (Telegram vs CLI)
 
-| Perintah | Deskripsi Singkat |
-| :--- | :--- |
-| `python3 tools/search.py "kueri"` | Mencari catatan di seluruh vault dengan Hybrid Search (BM25 + Vektor). |
-| `python3 tools/indexer.py` | Memperbarui database pencarian lokal SQLite di `data/vault_search.db`. |
-| `python3 scripts/ingest.py --all` | Mengolah file mentah di `raw/` menjadi artikel `wiki/` dan profil `crm/`. |
-| `python3 tools/weekly_synthesis.py` | Menjalankan audit kognitif mingguan dan mendeteksi catatan terisolasi. |
-| `python3 tools/weave.py "A" "B"` | Membuat sintesis analogi struktural dan transfer ilmu lintas domain. |
-| `python3 tools/war_room.py "Keputusan"` | Menjalankan simulasi Pre-Mortem Red Team untuk keputusan kritis. |
-| `sudo systemctl status secondbrain-telegram` | Memeriksa status kesehatan bot Telegram 24/7 di VPS. |
-| `sudo systemctl restart secondbrain-telegram` | Merestart daemon bot Telegram setelah perubahan konfigurasi `.env`. |
-| `./sync_vault.sh` | Sinkronisasi otomatis repositori vault ke GitHub. |
+| Operasi / Kategori | Perintah Telegram (HP) | Perintah CLI (VPS / PC) | Hasil & Dampak Sistem |
+| :--- | :--- | :--- | :--- |
+| **Quick Capture** | Kirim teks pendek biasa | `echo "- [$(date)] Catatan" >> journal/quick_captures.md` | Dicatat ke `journal/quick_captures.md` |
+| **Voice Capture** | Rekam & kirim Voice Note | `python3 scripts/telegram_bot.py` | Ditranskrip Whisper ke `raw/voice_dump_*.md` |
+| **Web Clip** | Kirim link URL (Web/YT) | Masuk otomatis via Telegram Ingest Bot | Ekstrak metadata ke `raw/web_*.md` |
+| **Triage & Ingest** | `/ingest` atau `/proses` | `python3 scripts/ingest.py --all` | Ekstrak intisari ke `wiki/` & `crm/`, re-indexing |
+| **Pencarian Hybrid** | `/search <kueri>` | `python3 tools/search.py "<kueri>"` | Cari via BM25 + dense semantic vector |
+| **Jelajah Catatan** | `/list` | `ls -lt wiki/ in_motion/` | Tampilkan 10 catatan terbaru dengan tombol `/read` |
+| **Baca Dokumen** | `/read <slug>` atau `/read_<slug>` | `cat wiki/<file>.md` | Baca isi dokumen Markdown langsung di Telegram |
+| **Uji Keputusan (Red Team)** | `/warroom <rencana>` | `python3 tools/war_room.py "<rencana>"` | Pre-Mortem report, 3 failure modes, kill-switch |
+| **Sintesis Lintas Domain** | `/weave <A> x <B>` | `python3 tools/weave.py "<A>" "<B>"` | Tesis isomorfik & 3 transfer konkret di `wiki/` |
+| **Audit Kognitif Mingguan** | `/weekly` atau `/audit` | `python3 tools/weekly_synthesis.py` | Wins, recurring obstacles, & 3 rekomendasi taktis |
+| **Multi-Device Sync** | `/sync` | `.\sync_vault.ps1` (PC) / `./sync_vault.sh` (VPS) | Commit & push ke GitHub, Obsidian up-to-date |
+| **Status Sistem** | `/status` | `sudo systemctl status secondbrain-telegram` | Cek jumlah file, ukuran database, & engine AI |
 
 ---
 *Dokumen ini diperbarui secara berkala dan disinkronkan dengan seluruh protokol otonom di [`agents.md`](file:///C:/Users/tio/.gemini/antigravity/scratch/second-brain/agents.md).*
