@@ -274,14 +274,12 @@ def process_file(file_path: Path, dry_run: bool = False, keep_raw: bool = False,
         print(f"[-] Skipping empty file: {file_path.name}")
         return False
 
-    api_key = os.getenv("GEMINI_API_KEY")
-    model = os.getenv("GEMINI_MODEL", "gemini-3.8-flash")
-
-    if api_key:
-        print(f"[*] Calling Gemini ({model}) for cognitive extraction...")
-        data = ai_parse_note(raw_content, file_path.name, api_key, model)
-    else:
-        print("[*] No GEMINI_API_KEY detected. Using local heuristic extraction engine...")
+    try:
+        import ai_engine
+        data, used_model = ai_engine.parse_text_with_ai(raw_content, file_path.name)
+        print(f"[*] Processed using AI model: {used_model}")
+    except Exception as e:
+        print(f"[!] AI Engine failed ({e}). Using local heuristic extraction engine...")
         data = local_heuristic_parse(raw_content, file_path.name)
 
     slug = data.get("slug", slugify(data.get("title", file_path.stem)))

@@ -206,7 +206,8 @@ def handle_voice_note(chat_id: int, file_id: str, mime_type: str = "audio/ogg"):
         return
         
     try:
-        data = transcribe_and_ingest_audio(audio_bytes, mime_type=mime_type)
+        import ai_engine
+        data, used_model = ai_engine.process_audio_with_ai(audio_bytes, mime_type=mime_type)
         
         # Save note
         slug = data.get("slug", f"voice-{datetime.now().strftime('%Y%m%d%H%M%S')}")
@@ -226,7 +227,8 @@ def handle_voice_note(chat_id: int, file_id: str, mime_type: str = "audio/ogg"):
         actions_str = "\n".join(actions[:3]) if actions else "_Tidak ada action items._"
         
         reply = (
-            f"✅ *Voice Note Berhasil Dikonversi & Dipetakan!*\n\n"
+            f"✅ *Voice Note Berhasil Dikonversi & Dipetakan!*\n"
+            f"🤖 *Engine:* `{used_model}`\n\n"
             f"📌 *Judul:* {data.get('title')}\n"
             f"📂 *Folder:* `{target_folder}/{slug}.md`\n"
             f"🏷️ *Stream:* `{data.get('stream')}` | *Type:* `{data.get('type')}`\n\n"
