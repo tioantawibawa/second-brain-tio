@@ -24,6 +24,7 @@
 ## 2. Knowledge Wiki & Topic Syntheses (`wiki/`)
 | Konsep / Entitas | Outgoing | Backlinks |
 | :--- | :--- | :--- |
+| [[wiki/synthesis_credit-risk_tactical-football-analytics|Sintesis Lintas Domain: Credit Risk x Tactical Football Analytics]] | 4 | 2 |
 | [[analisis-implementasi-prompt-caching-agentic-rag\|Evaluasi Prompt Caching dan Context Window Compression]] | 5 | 1 |
 | [[hacker-news-signal-ingestion-setup\|Hacker News]] | 5 | 0 |
 | [[langgraph-multi-agent-orchestration-patterns\|Multi-Agent Orchestration Patterns dengan LangGraph]] | 6 | 2 |
