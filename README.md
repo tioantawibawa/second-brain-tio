@@ -53,15 +53,21 @@ python scripts/ingest.py --file inbox_raw/draft-note.md --dry-run
 - Linux/VPS: `./scripts/process_dump.sh`
 - Windows: `.\scripts\process_dump.ps1`
 
-### B. Graph Indexer & Local Semantic Search (`graph_index.py`)
-Memindai seluruh vault, memetakan hubungan dua arah (*forward links*, *backlinks*, dan *dangling links*), serta memperbarui `INDEX.md`.
+### C. Telegram Ingest Gateway (`telegram_bot.py`)
+Bot Telegram mandiri (Pure Python Standard Library, tanpa framework bot berat) yang memungkinkan Anda menangkap ide secara instan dari smartphone ke VPS:
+- **Text Dump**: Kirim pesan teks mentah atau chat forward -> otomatis di-ingest & diklasifikasikan ke `in_motion/` atau `lattices/`.
+- **Voice Note (VN) Dump**: Kirim rekaman suara (VN) langsung dari Telegram. Audio otomatis dikirim ke **Gemini 3.8 Flash Multimodal API** untuk ditranskripsikan secara presisi dan diubah menjadi dokumen Markdown berstandar eksekutif lengkap dengan *action triggers*.
+- **Pencarian Cepat**: Ketik `/search <kata_kunci>` di chat Telegram untuk mencari catatan via algoritma BM25.
+- **Statistik Vault**: Ketik `/status` untuk melihat ringkasan deliverable dan backlog.
 
 ```bash
-# Membangun kembali indeks jaringan (INDEX.md)
-python scripts/graph_index.py build
+# Menjalankan bot secara interaktif
+python3 scripts/telegram_bot.py
 
-# Pencarian semantik lokal berbasis BM25 / TF-IDF
-python scripts/graph_index.py search "autonomous agent deployment"
+# Atau jalankan sebagai systemd service di background (24/7)
+sudo cp systemd/second-brain-bot.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now second-brain-bot
 ```
 
 ---
