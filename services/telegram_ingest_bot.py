@@ -53,6 +53,7 @@ ALLOWED_USER_ID = os.getenv("TELEGRAM_ALLOWED_USER_ID", "").strip()
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "").strip()
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "").strip()
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "").strip()
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.8-flash").strip()
 
 def slugify(text: str) -> str:
     """Generates clean slug from title."""
@@ -381,45 +382,57 @@ def format_bot_search(query: str) -> str:
             return f"🔍 *Pencarian:* `{query}`\n\n_Tidak ditemukan catatan yang cocok di vault._"
         reply = f"🔍 *Hasil Pencarian:* `{query}` ({len(hits)} catatan)\n\n"
         for idx, h in enumerate(hits, start=1):
-            cmd_slug = "/read_" + Path(h["path"]).stem.replace("-", "_")
-            reply += f"*{idx}. {h['title']}*\n"
-            reply += f"📁 `{h['path']}`\n"
-            snippet = h["snippet"][:110].replace("\n", " ").strip()
+            file_path = h.get("file_path", "")
+            title = h.get("title", "Tanpa Judul")
+            stem = Path(file_path).stem if file_path else ""
+            clean_stem = re.sub(r"[^a-zA-Z0-9_]", "_", stem)
+            cmd_slug = f"/read_{clean_stem}"
+            content = h.get("content", "")
+            snippet = content[:120].replace("\n", " ").replace("*", "").replace("`", "").strip()
+            clean_title = title.replace("*", "").replace("`", "")
+            reply += f"*{idx}. {clean_title}*\n"
+            reply += f"📁 `{file_path}`\n"
             reply += f"_{snippet}..._\n"
             reply += f"📖 Baca: {cmd_slug}\n\n"
+        reply += "💡 _Klik perintah di atas untuk membaca dokumen langsung di Telegram._"
         return reply
     except Exception as e:
         return f"❌ *Error saat mencari:* `{e}`"
 
 def format_bot_list() -> str:
-    dirs = ["wiki", "in_motion", "lattices", "journal"]
-    notes = []
-    for d in dirs:
-        p = REPO_ROOT / d
-        if not p.exists():
-            continue
-        for f in p.glob("**/*.md"):
-            if f.name in ("index.md", "README.md", "INDEX.md"):
+    try:
+        dirs = ["wiki", "in_motion", "lattices", "journal"]
+        notes = []
+        for d in dirs:
+            p = REPO_ROOT / d
+            if not p.exists():
                 continue
-            title = f.stem.replace("-", " ").title()
-            try:
-                m = re.search(r"^title:\s*[\"']?(.*?)[\"']?$", f.read_text(encoding="utf-8")[:500], re.MULTILINE)
-                if m:
-                    title = m.group(1).strip()
-            except Exception:
-                pass
-            notes.append((f.stat().st_mtime, title, f.stem, f.relative_to(REPO_ROOT).as_posix()))
-    notes.sort(key=lambda x: x[0], reverse=True)
-    if not notes:
-        return "📚 Vault Anda belum memiliki catatan."
-    reply = f"📚 *Catatan Terbaru di Second Brain ({len(notes)} total):*\n\n"
-    for idx, (_, title, stem, rel) in enumerate(notes[:10], start=1):
-        cmd = "/read_" + stem.replace("-", "_")
-        reply += f"*{idx}. {title}*\n"
-        reply += f"📁 `{rel}`\n"
-        reply += f"👉 {cmd}\n\n"
-    reply += "💡 _Klik perintah di atas untuk membaca isi catatan langsung di Telegram._"
-    return reply
+            for f in p.glob("**/*.md"):
+                if f.name in ("index.md", "README.md", "INDEX.md"):
+                    continue
+                title = f.stem.replace("-", " ").title()
+                try:
+                    m = re.search(r"^title:\s*[\"']?(.*?)[\"']?$", f.read_text(encoding="utf-8")[:500], re.MULTILINE)
+                    if m:
+                        title = m.group(1).strip()
+                except Exception:
+                    pass
+                notes.append((f.stat().st_mtime, title, f.stem, f.relative_to(REPO_ROOT).as_posix()))
+        notes.sort(key=lambda x: x[0], reverse=True)
+        if not notes:
+            return "📚 Vault Anda belum memiliki catatan."
+        reply = f"📚 *Catatan Terbaru di Second Brain ({len(notes)} total):*\n\n"
+        for idx, (_, title, stem, rel) in enumerate(notes[:10], start=1):
+            clean_stem = re.sub(r"[^a-zA-Z0-9_]", "_", stem)
+            cmd = f"/read_{clean_stem}"
+            clean_title = title.replace("*", "").replace("`", "")
+            reply += f"*{idx}. {clean_title}*\n"
+            reply += f"📁 `{rel}`\n"
+            reply += f"👉 {cmd}\n\n"
+        reply += "💡 _Klik perintah di atas untuk membaca isi catatan langsung di Telegram._"
+        return reply
+    except Exception as e:
+        return f"❌ *Gagal memuat daftar catatan:* `{e}`"
 
 def format_bot_read(target_slug: str) -> list[str]:
     target = target_slug.strip("/_ ").replace("-", " ").replace("_", " ").lower()
@@ -459,22 +472,27 @@ def format_bot_read(target_slug: str) -> list[str]:
         return [f"❌ Gagal membaca file: {e}"]
 
 def format_bot_status() -> str:
-    db_path = REPO_ROOT / "data" / "vault_search.db"
-    db_size = f"{db_path.stat().st_size / 1024:.1f} KB" if db_path.exists() else "Belum terindeks"
-    notes_count = sum(1 for f in REPO_ROOT.glob("**/*.md") if not any(k in f.parts for k in [".git", ".obsidian"]))
-    raw_pending = sum(1 for f in (REPO_ROOT / "raw").glob("*.md")) if (REPO_ROOT / "raw").exists() else 0
-    return (
-        f"📊 *Second Brain System Status*\n\n"
-        f"📚 *Total Catatan:* `{notes_count}` file Markdown\n"
-        f"📥 *Raw Inbox Pending:* `{raw_pending}` file belum di-ingest\n"
-        f"🔍 *Search Index:* `{db_size}` (SQLite)\n"
-        f"🤖 *Gemini Model:* `{GEMINI_MODEL}`\n"
-        f"⚡ *Whisper Engine:* `{'Groq (whisper-large-v3)' if GROQ_API_KEY else 'Gemini Multimodal'}`\n\n"
-        f"Perintah cepat:\n"
-        f"• `/list` -> Daftar 10 catatan terbaru\n"
-        f"• `/search <kueri>` -> Cari catatan\n"
-        f"• `/help` -> Bantuan lengkap"
-    )
+    try:
+        db_path = REPO_ROOT / "data" / "vault_search.db"
+        db_size = f"{db_path.stat().st_size / 1024:.1f} KB" if db_path.exists() else "Belum terindeks"
+        notes_count = sum(1 for f in REPO_ROOT.glob("**/*.md") if not any(k in f.parts for k in [".git", ".obsidian"]))
+        raw_pending = sum(1 for f in (REPO_ROOT / "raw").glob("*.md")) if (REPO_ROOT / "raw").exists() else 0
+        model_name = globals().get("GEMINI_MODEL", os.getenv("GEMINI_MODEL", "gemini-3.8-flash"))
+        whisper_engine = "Groq (whisper-large-v3)" if GROQ_API_KEY else "Gemini Multimodal"
+        return (
+            f"📊 *Second Brain System Status*\n\n"
+            f"📚 *Total Catatan:* `{notes_count}` file Markdown\n"
+            f"📥 *Raw Inbox Pending:* `{raw_pending}` file belum di-ingest\n"
+            f"🔍 *Search Index:* `{db_size}` (SQLite)\n"
+            f"🤖 *Gemini Model:* `{model_name}`\n"
+            f"⚡ *Whisper Engine:* `{whisper_engine}`\n\n"
+            f"Perintah cepat:\n"
+            f"• `/list` -> Daftar 10 catatan terbaru\n"
+            f"• `/search <kueri>` -> Cari catatan\n"
+            f"• `/help` -> Bantuan lengkap"
+        )
+    except Exception as e:
+        return f"❌ *Gagal memuat status sistem:* `{e}`"
 
 def format_bot_warroom(decision: str) -> str:
     decision = decision.strip()
@@ -746,12 +764,34 @@ try:
 except ImportError:
     HAS_PTB = False
 
+async def ptb_safe_reply(msg_target, text: str, parse_mode: str = "Markdown"):
+    """Resilient message sender: attempts parse_mode, falls back to plain text if formatting errors occur."""
+    try:
+        return await msg_target.reply_text(text, parse_mode=parse_mode)
+    except Exception as e:
+        logger.warning(f"Markdown reply failed ({e}), retrying plain text")
+        try:
+            return await msg_target.reply_text(text)
+        except Exception as e2:
+            logger.error(f"Plain text reply also failed: {e2}")
+
+async def ptb_safe_edit(msg, text: str, parse_mode: str = "Markdown"):
+    """Resilient message editor: attempts parse_mode, falls back to plain text if formatting errors occur."""
+    try:
+        return await msg.edit_text(text, parse_mode=parse_mode)
+    except Exception as e:
+        logger.warning(f"Markdown edit failed ({e}), retrying plain text")
+        try:
+            return await msg.edit_text(text)
+        except Exception as e2:
+            logger.error(f"Plain text edit also failed: {e2}")
+
 async def ptb_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.effective_user.id)
     if ALLOWED_USER_ID and user_id != str(ALLOWED_USER_ID):
-        await update.message.reply_text(f"⛔ Akses Ditolak. User ID `{user_id}` tidak terdaftar.", parse_mode="Markdown")
+        await ptb_safe_reply(update.message, f"⛔ Akses Ditolak. User ID `{user_id}` tidak terdaftar.")
         return
-    await update.message.reply_text(format_bot_help(), parse_mode="Markdown")
+    await ptb_safe_reply(update.message, format_bot_help())
 
 async def ptb_help(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await ptb_start(update, context)
@@ -760,20 +800,20 @@ async def ptb_status(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.effective_user.id)
     if ALLOWED_USER_ID and user_id != str(ALLOWED_USER_ID):
         return
-    await update.message.reply_text(format_bot_status(), parse_mode="Markdown")
+    await ptb_safe_reply(update.message, format_bot_status())
 
 async def ptb_list(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.effective_user.id)
     if ALLOWED_USER_ID and user_id != str(ALLOWED_USER_ID):
         return
-    await update.message.reply_text(format_bot_list(), parse_mode="Markdown")
+    await ptb_safe_reply(update.message, format_bot_list())
 
 async def ptb_search(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.effective_user.id)
     if ALLOWED_USER_ID and user_id != str(ALLOWED_USER_ID):
         return
     query = " ".join(context.args).strip() if context.args else ""
-    await update.message.reply_text(format_bot_search(query), parse_mode="Markdown")
+    await ptb_safe_reply(update.message, format_bot_search(query))
 
 async def ptb_read(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.effective_user.id)
@@ -782,7 +822,7 @@ async def ptb_read(update: Update, context: ContextTypes.DEFAULT_TYPE):
     target = " ".join(context.args).strip() if context.args else ""
     chunks = format_bot_read(target)
     for c in chunks:
-        await update.message.reply_text(c, parse_mode="Markdown")
+        await ptb_safe_reply(update.message, c)
 
 async def ptb_warroom(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.effective_user.id)
@@ -791,7 +831,7 @@ async def ptb_warroom(update: Update, context: ContextTypes.DEFAULT_TYPE):
     decision = " ".join(context.args).strip() if context.args else ""
     status_msg = await update.message.reply_text("💀 *Menjalankan simulasi War Room Pre-Mortem Red Team...*", parse_mode="Markdown")
     reply = format_bot_warroom(decision)
-    await status_msg.edit_text(reply, parse_mode="Markdown")
+    await ptb_safe_edit(status_msg, reply)
 
 async def ptb_weave(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.effective_user.id)
@@ -800,13 +840,15 @@ async def ptb_weave(update: Update, context: ContextTypes.DEFAULT_TYPE):
     args = " ".join(context.args).strip() if context.args else ""
     status_msg = await update.message.reply_text("🕸️ *Menjalankan sintesis lintas domain WEAVE...*", parse_mode="Markdown")
     reply = format_bot_weave(args)
+    await ptb_safe_edit(status_msg, reply)
+
 async def ptb_ingest(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.effective_user.id)
     if ALLOWED_USER_ID and user_id != str(ALLOWED_USER_ID):
         return
     msg = await update.message.reply_text("⚡ *Menjalankan Autonomous Ingest Pipeline...*", parse_mode="Markdown")
     reply = format_bot_ingest()
-    await msg.edit_text(reply, parse_mode="Markdown")
+    await ptb_safe_edit(msg, reply)
 
 async def ptb_weekly(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.effective_user.id)
@@ -814,7 +856,7 @@ async def ptb_weekly(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     msg = await update.message.reply_text("🧠 *Menjalankan Audit Kognitif Mingguan...*", parse_mode="Markdown")
     reply = format_bot_weekly()
-    await msg.edit_text(reply, parse_mode="Markdown")
+    await ptb_safe_edit(msg, reply)
 
 async def ptb_sync(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.effective_user.id)
@@ -822,13 +864,13 @@ async def ptb_sync(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     msg = await update.message.reply_text("🔄 *Menjalankan sinkronisasi multi-perangkat...*", parse_mode="Markdown")
     reply = format_bot_sync()
-    await msg.edit_text(reply, parse_mode="Markdown")
+    await ptb_safe_edit(msg, reply)
 
 async def ptb_handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.effective_user.id)
     if ALLOWED_USER_ID and user_id != str(ALLOWED_USER_ID):
         logger.warning(f"Unauthorized text attempt from user {user_id}")
-        await update.message.reply_text(f"⛔ Akses Ditolak. User ID `{user_id}` tidak terdaftar.", parse_mode="Markdown")
+        await ptb_safe_reply(update.message, f"⛔ Akses Ditolak. User ID `{user_id}` tidak terdaftar.")
         return
 
     text = update.message.text.strip()
@@ -838,7 +880,7 @@ async def ptb_handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if text in ("/ingest", "/ingest all", "/proses"):
         msg = await update.message.reply_text("⚡ *Menjalankan Autonomous Ingest Pipeline...*", parse_mode="Markdown")
         reply = format_bot_ingest()
-        await msg.edit_text(reply, parse_mode="Markdown")
+        await ptb_safe_edit(msg, reply)
         return
 
     # Intercept War Room / Pre-Mortem commands or prefix triggers
@@ -846,19 +888,19 @@ async def ptb_handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
         decision = re.sub(r"^/(?:warroom|premortem)\s*", "", text).strip()
         status_msg = await update.message.reply_text("💀 *Menjalankan simulasi War Room Pre-Mortem Red Team...*", parse_mode="Markdown")
         reply = format_bot_warroom(decision)
-        await status_msg.edit_text(reply, parse_mode="Markdown")
+        await ptb_safe_edit(status_msg, reply)
         return
     elif lower_text.startswith(("war room:", "warroom:", "pre-mortem:", "premortem:", "uji keputusan:")):
         decision = re.sub(r"^(?:war\s*room|warroom|pre-?mortem|uji\s*keputusan):\s*", "", text, flags=re.IGNORECASE).strip()
         status_msg = await update.message.reply_text("💀 *Menjalankan simulasi War Room Pre-Mortem Red Team...*", parse_mode="Markdown")
         reply = format_bot_warroom(decision)
-        await status_msg.edit_text(reply, parse_mode="Markdown")
+        await ptb_safe_edit(status_msg, reply)
         return
     elif text.startswith("/weave"):
         args = text[6:].strip()
         status_msg = await update.message.reply_text("🕸️ *Menjalankan sintesis lintas domain WEAVE...*", parse_mode="Markdown")
         reply = format_bot_weave(args)
-        await status_msg.edit_text(reply, parse_mode="Markdown")
+        await ptb_safe_edit(status_msg, reply)
         return
 
     # Intercept direct /read_ commands
@@ -866,33 +908,33 @@ async def ptb_handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
         slug = text[6:].replace("_", "-")
         chunks = format_bot_read(slug)
         for c in chunks:
-            await update.message.reply_text(c, parse_mode="Markdown")
+            await ptb_safe_reply(update.message, c)
         return
     elif text.startswith("/read"):
         slug = text[5:].strip().replace("_", "-")
         chunks = format_bot_read(slug)
         for c in chunks:
-            await update.message.reply_text(c, parse_mode="Markdown")
+            await ptb_safe_reply(update.message, c)
         return
     elif text.startswith("/search"):
         q = text[7:].strip()
-        await update.message.reply_text(format_bot_search(q), parse_mode="Markdown")
+        await ptb_safe_reply(update.message, format_bot_search(q))
         return
     elif text == "/list":
-        await update.message.reply_text(format_bot_list(), parse_mode="Markdown")
+        await ptb_safe_reply(update.message, format_bot_list())
         return
     elif text == "/status":
-        await update.message.reply_text(format_bot_status(), parse_mode="Markdown")
+        await ptb_safe_reply(update.message, format_bot_status())
         return
     elif text in ("/weekly", "/audit"):
         msg = await update.message.reply_text("🧠 *Menjalankan Audit Kognitif Mingguan...*", parse_mode="Markdown")
         reply = format_bot_weekly()
-        await msg.edit_text(reply, parse_mode="Markdown")
+        await ptb_safe_edit(msg, reply)
         return
     elif text == "/sync":
         msg = await update.message.reply_text("🔄 *Menjalankan sinkronisasi multi-perangkat...*", parse_mode="Markdown")
         reply = format_bot_sync()
-        await msg.edit_text(reply, parse_mode="Markdown")
+        await ptb_safe_edit(msg, reply)
         return
 
     res = process_incoming_text(text)
@@ -981,7 +1023,11 @@ def run_builtin_fallback():
         try:
             tg_call("sendMessage", {"chat_id": chat_id, "text": text, "parse_mode": "Markdown"})
         except Exception as e:
-            logger.error(f"Failed to send message: {e}")
+            logger.warning(f"Markdown send failed ({e}), falling back to plain text")
+            try:
+                tg_call("sendMessage", {"chat_id": chat_id, "text": text})
+            except Exception as e2:
+                logger.error(f"Failed to send plain text message: {e2}")
 
     last_offset = 0
     while True:
