@@ -476,6 +476,122 @@ def format_bot_status() -> str:
         f"• `/help` -> Bantuan lengkap"
     )
 
+def format_bot_warroom(decision: str) -> str:
+    decision = decision.strip()
+    if not decision:
+        return (
+            "💀 *Format War Room Pre-Mortem:*\n"
+            "`/warroom <rencana atau keputusan Anda>`\n\n"
+            "Contoh:\n"
+            "`/warroom Menerima proyek konsultasi enterprise senilai Rp 150 juta dengan klausul penalti denda keterlambatan`"
+        )
+    try:
+        sys.path.insert(0, str(REPO_ROOT / "tools"))
+        import war_room
+        
+        journals = war_room.scan_journal_biases()
+        crms = war_room.scan_crm_contacts()
+        tech = war_room.scan_technical_assumptions(decision)
+        
+        data = war_room.call_gemini_war_room(decision, journals, crms, tech)
+        if not data:
+            data = war_room.generate_heuristic_war_room(decision, journals, crms)
+            
+        md_content, slug = war_room.format_war_room_markdown(decision, data, journals, crms, tech)
+        target_filename = f"war_room_{slug}.md"
+        target_file = REPO_ROOT / "in_motion" / target_filename
+        target_file.parent.mkdir(parents=True, exist_ok=True)
+        target_file.write_text(md_content, encoding="utf-8")
+        
+        war_room.update_indexes(target_filename, f"War Room Pre-Mortem: {data.get('project_title', decision)}")
+        war_room.log_operation(target_file.stem, decision)
+        
+        # Build executive summary
+        title = data.get("project_title", decision)
+        thesis = data.get("executive_premortem_thesis", "")
+        
+        fms = data.get("failure_modes", [])
+        fm_text = ""
+        for idx, fm in enumerate(fms, 1):
+            fm_text += f"{idx}. *{fm['scenario']}* (`{fm.get('probability', 'Tinggi')}`)\n   ⚠️ Pemicu: _{fm['trigger_event']}_\n"
+            
+        questions = data.get("blindspot_questions", [])
+        q_text = "\n".join([f"{idx}. {q}" for idx, q in enumerate(questions, 1)])
+        
+        mitigs = data.get("actionable_mitigations", [])
+        mitig_text = ""
+        for idx, am in enumerate(mitigs, 1):
+            mitig_text += f"• *{am['action']}*\n   Batas Toleransi: `{am['metric_threshold']}`\n"
+            
+        reply = (
+            f"💀 *WAR ROOM PRE-MORTEM EXECUTIVE SUMMARY*\n"
+            f"🎯 *Target:* `{title}`\n\n"
+            f"⚡ *Retrospektif Kegagalan dari Masa Depan:*\n"
+            f"_{thesis}_\n\n"
+            f"🔥 *3 Skenario Kegagalan Paling Realistis:*\n"
+            f"{fm_text}\n"
+            f"❓ *5 Pertanyaan Blindspot Wajib:*\n"
+            f"{q_text}\n\n"
+            f"🛡️ *Actionable Mitigation & Kill-Switch:*\n"
+            f"{mitig_text}\n"
+            f"📁 *Dokumen lengkap tersimpan di:* `in_motion/{target_filename}`\n"
+            f"📖 Baca full: `/read {target_file.stem}`"
+        )
+        return reply
+    except Exception as e:
+        return f"❌ *Gagal menjalankan War Room:* `{e}`"
+
+def format_bot_weave(args_text: str) -> str:
+    parts = re.split(r"\s+(?:dan|x|\&)\s+", args_text.strip(), flags=re.IGNORECASE)
+    if len(parts) < 2:
+        return (
+            "🕸️ *Format Operasi WEAVE:*\n"
+            "`/weave <Domain A> x <Domain B>`\n\n"
+            "Contoh:\n"
+            "`/weave Credit Risk x Tactical Football Analytics`"
+        )
+    domain_a = parts[0].strip()
+    domain_b = parts[1].strip()
+    try:
+        sys.path.insert(0, str(REPO_ROOT / "tools"))
+        import weave
+        
+        ctx_a = weave.search_vault_for_domain(domain_a, top_k=2)
+        ctx_b = weave.search_vault_for_domain(domain_b, top_k=2)
+        backlinks = [f"[[{Path(d['path']).stem}]]" for d in ctx_a + ctx_b]
+        
+        data = weave.call_gemini_synthesis(domain_a, domain_b, ctx_a, ctx_b)
+        if not data:
+            data = weave.generate_heuristic_synthesis(domain_a, domain_b)
+            
+        slug_a = weave.slugify(domain_a.split("/")[0])
+        slug_b = weave.slugify(domain_b.split("/")[0])
+        target_filename = f"synthesis_{slug_a}_{slug_b}.md"
+        target_file = REPO_ROOT / "wiki" / target_filename
+        
+        md_content = weave.format_synthesis_markdown(domain_a, domain_b, data, backlinks)
+        target_file.parent.mkdir(parents=True, exist_ok=True)
+        target_file.write_text(md_content, encoding="utf-8")
+        
+        weave.update_indexes(target_filename, f"Sintesis Lintas Domain: {domain_a} x {domain_b}", domain_a, domain_b)
+        weave.log_operation(target_file.stem, domain_a, domain_b)
+        
+        transfers_text = ""
+        for idx, t in enumerate(data.get("transfers", []), 1):
+            transfers_text += f"{idx}. *{t['title']}*\n   💡 {t['concrete_solution'][:150]}...\n\n"
+            
+        reply = (
+            f"🕸️ *SINTESIS LINTAS DOMAIN (WEAVE)*\n"
+            f"🔬 *{domain_a}* ✖️ *{domain_b}*\n\n"
+            f"📌 *Tesis Isomorfik:*\n_{data.get('thesis', '')[:350]}..._\n\n"
+            f"🚀 *Transfer Ilmu Konkret:*\n{transfers_text}"
+            f"📁 *Dokumen lengkap:* `wiki/{target_filename}`\n"
+            f"📖 Baca full: `/read {target_file.stem}`"
+        )
+        return reply
+    except Exception as e:
+        return f"❌ *Gagal menjalankan WEAVE:* `{e}`"
+
 def format_bot_help() -> str:
     return (
         "🧠 *Panduan Second Brain Telegram Ingest Bot*\n\n"
@@ -483,6 +599,9 @@ def format_bot_help() -> str:
         "• *Voice Note / VN*: Cukup rekam suara langsung. Bot otomatis mentranskripsi via Whisper dan menyimpannya ke `raw/`.\n"
         "• *Link Web / YouTube*: Kirim URL link. Judul dan konten akan diekstrak otomatis ke `raw/`.\n"
         "• *Pikiran / Catatan Singkat*: Kirim teks pendek. Otomatis masuk ke `journal/quick_captures.md` dengan timestamp.\n\n"
+        "⚔️ *Operasi Strategis & Kognitif:*\n"
+        "• `/warroom <keputusan>` - Jalankan War Room Pre-Mortem Red Team untuk menguji risiko rencana Anda\n"
+        "• `/weave <Domain A> x <Domain B>` - Sintesis analogi struktural lintas domain\n\n"
         "🔎 *Perintah Interaktif:*\n"
         "• `/search <kueri>` - Cari catatan via Hybrid Search (BM25 + Vektor)\n"
         "• `/list` - Tampilkan daftar catatan terbaru dengan tombol baca\n"
@@ -545,6 +664,24 @@ async def ptb_read(update: Update, context: ContextTypes.DEFAULT_TYPE):
     for c in chunks:
         await update.message.reply_text(c, parse_mode="Markdown")
 
+async def ptb_warroom(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = str(update.effective_user.id)
+    if ALLOWED_USER_ID and user_id != str(ALLOWED_USER_ID):
+        return
+    decision = " ".join(context.args).strip() if context.args else ""
+    status_msg = await update.message.reply_text("💀 *Menjalankan simulasi War Room Pre-Mortem Red Team...*", parse_mode="Markdown")
+    reply = format_bot_warroom(decision)
+    await status_msg.edit_text(reply, parse_mode="Markdown")
+
+async def ptb_weave(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = str(update.effective_user.id)
+    if ALLOWED_USER_ID and user_id != str(ALLOWED_USER_ID):
+        return
+    args = " ".join(context.args).strip() if context.args else ""
+    status_msg = await update.message.reply_text("🕸️ *Menjalankan sintesis lintas domain WEAVE...*", parse_mode="Markdown")
+    reply = format_bot_weave(args)
+    await status_msg.edit_text(reply, parse_mode="Markdown")
+
 async def ptb_handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.effective_user.id)
     if ALLOWED_USER_ID and user_id != str(ALLOWED_USER_ID):
@@ -553,7 +690,28 @@ async def ptb_handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     text = update.message.text.strip()
+    lower_text = text.lower()
     
+    # Intercept War Room / Pre-Mortem commands or prefix triggers
+    if text.startswith(("/warroom", "/premortem")):
+        decision = re.sub(r"^/(?:warroom|premortem)\s*", "", text).strip()
+        status_msg = await update.message.reply_text("💀 *Menjalankan simulasi War Room Pre-Mortem Red Team...*", parse_mode="Markdown")
+        reply = format_bot_warroom(decision)
+        await status_msg.edit_text(reply, parse_mode="Markdown")
+        return
+    elif lower_text.startswith(("war room:", "warroom:", "pre-mortem:", "premortem:", "uji keputusan:")):
+        decision = re.sub(r"^(?:war\s*room|warroom|pre-?mortem|uji\s*keputusan):\s*", "", text, flags=re.IGNORECASE).strip()
+        status_msg = await update.message.reply_text("💀 *Menjalankan simulasi War Room Pre-Mortem Red Team...*", parse_mode="Markdown")
+        reply = format_bot_warroom(decision)
+        await status_msg.edit_text(reply, parse_mode="Markdown")
+        return
+    elif text.startswith("/weave"):
+        args = text[6:].strip()
+        status_msg = await update.message.reply_text("🕸️ *Menjalankan sintesis lintas domain WEAVE...*", parse_mode="Markdown")
+        reply = format_bot_weave(args)
+        await status_msg.edit_text(reply, parse_mode="Markdown")
+        return
+
     # Intercept direct /read_ commands
     if text.startswith("/read_"):
         slug = text[6:].replace("_", "-")
@@ -635,6 +793,9 @@ def run_ptb():
     app.add_handler(CommandHandler("list", ptb_list))
     app.add_handler(CommandHandler("search", ptb_search))
     app.add_handler(CommandHandler("read", ptb_read))
+    app.add_handler(CommandHandler("warroom", ptb_warroom))
+    app.add_handler(CommandHandler("premortem", ptb_warroom))
+    app.add_handler(CommandHandler("weave", ptb_weave))
     app.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), ptb_handle_text))
     app.add_handler(MessageHandler(filters.VOICE | filters.AUDIO, ptb_handle_voice))
     
@@ -681,8 +842,24 @@ def run_builtin_fallback():
                 # 1. Text Message
                 if "text" in msg:
                     text = msg["text"].strip()
+                    lower_text = text.lower()
                     if text in ("/start", "/help"):
                         send_tg_msg(chat_id, format_bot_help())
+                        continue
+                    elif text.startswith(("/warroom", "/premortem")):
+                        decision = re.sub(r"^/(?:warroom|premortem)\s*", "", text).strip()
+                        send_tg_msg(chat_id, "💀 *Menjalankan simulasi War Room Pre-Mortem Red Team...*")
+                        send_tg_msg(chat_id, format_bot_warroom(decision))
+                        continue
+                    elif lower_text.startswith(("war room:", "warroom:", "pre-mortem:", "premortem:", "uji keputusan:")):
+                        decision = re.sub(r"^(?:war\s*room|warroom|pre-?mortem|uji\s*keputusan):\s*", "", text, flags=re.IGNORECASE).strip()
+                        send_tg_msg(chat_id, "💀 *Menjalankan simulasi War Room Pre-Mortem Red Team...*")
+                        send_tg_msg(chat_id, format_bot_warroom(decision))
+                        continue
+                    elif text.startswith("/weave"):
+                        args = text[6:].strip()
+                        send_tg_msg(chat_id, "🕸️ *Menjalankan sintesis lintas domain WEAVE...*")
+                        send_tg_msg(chat_id, format_bot_weave(args))
                         continue
                     elif text == "/status":
                         send_tg_msg(chat_id, format_bot_status())
