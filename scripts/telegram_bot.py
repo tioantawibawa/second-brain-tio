@@ -710,4 +710,10 @@ def run_bot():
             time.sleep(5)
 
 if __name__ == "__main__":
-    run_bot()
+    try:
+        sys.path.insert(0, str(REPO_ROOT))
+        from services.telegram_ingest_bot import main as run_new_bot
+        run_new_bot()
+    except Exception as e:
+        print(f"[!] Falling back to legacy runner: {e}")
+        run_bot()
