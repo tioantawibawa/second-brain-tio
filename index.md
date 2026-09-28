@@ -34,6 +34,9 @@
 ## 2. Knowledge Wiki & Topic Syntheses (`wiki/`)
 | Konsep / Entitas | Outgoing | Backlinks |
 | :--- | :--- | :--- |
+| [[wiki/synthesis_ekspor-kopi-robusta-sumatra-anjlok_credit-scoring|Sintesis Lintas Domain: Ekspor Kopi Robusta Sumatra Anjlok x credit scoring]] | 4 | 2 |
+| [[wiki/synthesis_moneyball_liga-indonesia|Sintesis Lintas Domain: moneyball x liga indonesia]] | 4 | 2 |
+| [[wiki/synthesis_distributed-systems_evolutionary-biology|Sintesis Lintas Domain: Distributed Systems x Evolutionary Biology]] | 4 | 2 |
 | [[analisis-implementasi-prompt-caching-agentic-rag\|Evaluasi Prompt Caching dan Context Window Compression]] | 5 | 2 |
 | [[hacker-news-signal-ingestion-setup\|Hacker News]] | 5 | 1 |
 | [[langgraph-multi-agent-orchestration-patterns\|Multi-Agent Orchestration Patterns dengan LangGraph]] | 6 | 3 |
