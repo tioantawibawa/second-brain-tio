@@ -291,6 +291,9 @@ git pull origin main && python3 tools/indexer.py
 
 | Operasi / Kategori | Perintah Telegram (HP) | Perintah CLI (VPS / PC) | Hasil & Dampak Sistem |
 | :--- | :--- | :--- | :--- |
+| **Grounded Vault Q&A** | `/ask <pertanyaan>` *(atau `tanya:`)* | `python3 tools/query.py "<tanya>"` | Jawaban AI 100% bersandar pada isi vault + rujukan file |
+| **Morning Pulse Digest** | `/brief` *(atau `/morning`)* | `python3 tools/daily_brief.py` | Fokus hari ini, pending tasks, & Serendipity Concept |
+| **Decision Sparring** | `/sparring <A> vs <B>` | `python3 tools/sparring.py "<A> vs <B>"` | Evaluasi trade-off 4 dimensi & rekomendasi keputusan |
 | **Quick Capture** | Kirim teks pendek biasa | `echo "- [$(date)] Catatan" >> journal/quick_captures.md` | Dicatat ke `journal/quick_captures.md` |
 | **Voice Capture** | Rekam & kirim Voice Note | `python3 scripts/telegram_bot.py` | Ditranskrip Whisper ke `raw/voice_dump_*.md` |
 | **Web Clip** | Kirim link URL (Web/YT) | Masuk otomatis via Telegram Ingest Bot | Ekstrak metadata ke `raw/web_*.md` |
@@ -303,6 +306,28 @@ git pull origin main && python3 tools/indexer.py
 | **Audit Kognitif Mingguan** | `/weekly` atau `/audit` | `python3 tools/weekly_synthesis.py` | Wins, recurring obstacles, & 3 rekomendasi taktis |
 | **Multi-Device Sync** | `/sync` | `.\sync_vault.ps1` (PC) / `./sync_vault.sh` (VPS) | Commit & push ke GitHub, Obsidian up-to-date |
 | **Status Sistem** | `/status` | `sudo systemctl status secondbrain-telegram` | Cek jumlah file, ukuran database, & engine AI |
+
+---
+
+## 🚀 11. Fitur Advanced Baru (Proactive Intelligence Partner)
+
+### A. Grounded Vault Q&A (`/ask` / `tools/query.py` — Protokol 2)
+Mengubah Telegram Anda menjadi asisten cerdas pribadi yang menjawab pertanyaan murni berdasarkan basis pengetahuan vault Anda (*Zero Halusinasi*).
+- **Di Telegram**: `/ask apa strategi mitigasi kita untuk penanganan model drift musiman?`
+- **Di CLI**: `python3 tools/query.py "siapa saja kontak perbankan yang kita punya di CRM?"`
+- **Output**: Sintesis jawaban terstruktur, intisari kunci, langkah rekomendasi, serta tautan langsung dokumen sumber (`/read_<slug>`).
+
+### B. Executive Morning Pulse (`/brief` / `tools/daily_brief.py`)
+Ringkasan pagi hari sebelum Anda mulai bekerja:
+- **Di Telegram**: `/brief` (atau `/morning`, `/today`)
+- **Di CLI**: `python3 tools/daily_brief.py`
+- **Output**: Membedah 3 deliverable aktif di `in_motion/`, mengekstrak tugas belum selesai (`- [ ]`), merangkum ide kilat 24 jam terakhir, dan menyajikan **Serendipity Concept of the Day** (mengangkat 1 catatan lama dari `wiki/` agar ingatan tetap segar).
+
+### C. Strategic Decision Sparring (`/sparring` / `tools/sparring.py`)
+Membantu Anda mengambil keputusan sulit antara 2 pilihan arsitektur atau bisnis:
+- **Di Telegram**: `/sparring Postgres pgvector vs SQLite Hybrid Search Lokal`
+- **Di CLI**: `python3 tools/sparring.py "Proyek Konsultasi Enterprise vs Bangun Produk SaaS"`
+- **Output**: Membedah trade-off melintasi 4 dimensi: *Time-to-Value*, *Beban Kognitif & Maintenance*, *Asymmetric Upside*, dan *Fragility/Lock-in Risk*, lengkap dengan pemenang rekomendasi dan *Circuit Breaker*.
 
 ---
 *Dokumen ini diperbarui secara berkala dan disinkronkan dengan seluruh protokol otonom di [`agents.md`](file:///C:/Users/tio/.gemini/antigravity/scratch/second-brain/agents.md).*

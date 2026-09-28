@@ -725,6 +725,56 @@ def format_bot_sync() -> str:
     except Exception as e:
         return f"❌ *Gagal melakukan sinkronisasi:* `{e}`"
 
+def format_bot_ask(query: str) -> str:
+    query = query.strip()
+    if not query:
+        return (
+            "💡 *Format Grounded Vault Q&A (Protokol 2):*\n"
+            "`/ask <pertanyaan Anda>`\n\n"
+            "Contoh:\n"
+            "`/ask apa strategi mitigasi model drift musiman?`\n"
+            "`/ask siapa saja kontak perbankan yang kita miliki di CRM?`"
+        )
+    try:
+        sys.path.insert(0, str(REPO_ROOT / "tools"))
+        import query as query_tool
+        data = query_tool.ask_vault(query)
+        return query_tool.format_query_response_markdown(data)
+    except Exception as e:
+        logger.error(f"Error in format_bot_ask: {e}")
+        return f"❌ *Gagal menjawab pertanyaan:* `{e}`"
+
+def format_bot_daily_brief() -> str:
+    try:
+        sys.path.insert(0, str(REPO_ROOT / "tools"))
+        import daily_brief
+        return daily_brief.build_morning_briefing()
+    except Exception as e:
+        logger.error(f"Error in format_bot_daily_brief: {e}")
+        return f"❌ *Gagal menyusun morning briefing:* `{e}`"
+
+def format_bot_sparring(args_text: str) -> str:
+    args_text = args_text.strip()
+    parts = re.split(r"\s+(?:vs|versus)\s+", args_text, flags=re.IGNORECASE)
+    if len(parts) < 2:
+        return (
+            "⚖️ *Format Strategic Decision Sparring:*\n"
+            "`/sparring <Opsi A> vs <Opsi B>`\n\n"
+            "Contoh:\n"
+            "`/sparring Custom RAG Engine vs Managed Vector DB Cloud`\n"
+            "`/sparring Proyek Konsultasi Enterprise vs Bangun Produk SaaS`"
+        )
+    opt_a = parts[0].strip()
+    opt_b = parts[1].strip()
+    try:
+        sys.path.insert(0, str(REPO_ROOT / "tools"))
+        import sparring
+        data = sparring.run_sparring(opt_a, opt_b)
+        return sparring.format_sparring_markdown(opt_a, opt_b, data)
+    except Exception as e:
+        logger.error(f"Error in format_bot_sparring: {e}")
+        return f"❌ *Gagal menjalankan decision sparring:* `{e}`"
+
 def format_bot_help() -> str:
     return (
         "🧠 *Panduan Second Brain Telegram Ingest Bot*\n\n"
@@ -734,6 +784,10 @@ def format_bot_help() -> str:
         "• *Pikiran / Catatan Singkat*: Kirim teks pendek. Otomatis masuk ke `journal/quick_captures.md` dengan timestamp.\n\n"
         "⚡ *Autonomous Pipeline & Triage:*\n"
         "• `/ingest` - Proses seluruh file mentah di `raw/` ke `wiki/` dan profil `crm/`\n\n"
+        "🤖 *AI Intelligence & Q&A (Protokol 2):*\n"
+        "• `/ask <pertanyaan>` - Tanya asisten AI berbasis 100% catatan vault Anda (grounded Q&A)\n"
+        "• `/brief` - Executive Morning Pulse (fokus hari ini, pending tasks, serendipity spark)\n"
+        "• `/sparring <A> vs <B>` - Bedah komparasi trade-off & rekomendasi keputusan\n\n"
         "⚔️ *Operasi Strategis & Kognitif:*\n"
         "• `/warroom <keputusan>` - Jalankan War Room Pre-Mortem Red Team untuk menguji risiko rencana Anda\n"
         "• `/weave <Domain A> x <Domain B>` - Sintesis analogi struktural lintas domain\n"
@@ -866,6 +920,32 @@ async def ptb_sync(update: Update, context: ContextTypes.DEFAULT_TYPE):
     reply = format_bot_sync()
     await ptb_safe_edit(msg, reply)
 
+async def ptb_ask(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = str(update.effective_user.id)
+    if ALLOWED_USER_ID and user_id != str(ALLOWED_USER_ID):
+        return
+    query = " ".join(context.args).strip() if context.args else ""
+    msg = await update.message.reply_text("💡 *Menelusuri vault dan mensintesis jawaban...*", parse_mode="Markdown")
+    reply = format_bot_ask(query)
+    await ptb_safe_edit(msg, reply)
+
+async def ptb_brief(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = str(update.effective_user.id)
+    if ALLOWED_USER_ID and user_id != str(ALLOWED_USER_ID):
+        return
+    msg = await update.message.reply_text("🌅 *Menyiapkan Executive Morning Pulse...*", parse_mode="Markdown")
+    reply = format_bot_daily_brief()
+    await ptb_safe_edit(msg, reply)
+
+async def ptb_sparring(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = str(update.effective_user.id)
+    if ALLOWED_USER_ID and user_id != str(ALLOWED_USER_ID):
+        return
+    args = " ".join(context.args).strip() if context.args else ""
+    msg = await update.message.reply_text("⚖️ *Menjalankan evaluasi strategic decision sparring...*", parse_mode="Markdown")
+    reply = format_bot_sparring(args)
+    await ptb_safe_edit(msg, reply)
+
 async def ptb_handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.effective_user.id)
     if ALLOWED_USER_ID and user_id != str(ALLOWED_USER_ID):
@@ -901,6 +981,29 @@ async def ptb_handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
         status_msg = await update.message.reply_text("🕸️ *Menjalankan sintesis lintas domain WEAVE...*", parse_mode="Markdown")
         reply = format_bot_weave(args)
         await ptb_safe_edit(status_msg, reply)
+        return
+    elif text.startswith("/ask"):
+        query = text[4:].strip()
+        msg = await update.message.reply_text("💡 *Menelusuri vault dan mensintesis jawaban...*", parse_mode="Markdown")
+        reply = format_bot_ask(query)
+        await ptb_safe_edit(msg, reply)
+        return
+    elif lower_text.startswith(("tanya:", "ask:")):
+        query = re.sub(r"^(?:tanya|ask):\s*", "", text, flags=re.IGNORECASE).strip()
+        msg = await update.message.reply_text("💡 *Menelusuri vault dan mensintesis jawaban...*", parse_mode="Markdown")
+        reply = format_bot_ask(query)
+        await ptb_safe_edit(msg, reply)
+        return
+    elif text in ("/brief", "/morning", "/pulse", "/today"):
+        msg = await update.message.reply_text("🌅 *Menyiapkan Executive Morning Pulse...*", parse_mode="Markdown")
+        reply = format_bot_daily_brief()
+        await ptb_safe_edit(msg, reply)
+        return
+    elif text.startswith("/sparring"):
+        args = text[9:].strip()
+        msg = await update.message.reply_text("⚖️ *Menjalankan evaluasi strategic decision sparring...*", parse_mode="Markdown")
+        reply = format_bot_sparring(args)
+        await ptb_safe_edit(msg, reply)
         return
 
     # Intercept direct /read_ commands
@@ -1001,6 +1104,10 @@ def run_ptb():
     app.add_handler(CommandHandler("weekly", ptb_weekly))
     app.add_handler(CommandHandler("audit", ptb_weekly))
     app.add_handler(CommandHandler("sync", ptb_sync))
+    app.add_handler(CommandHandler("ask", ptb_ask))
+    app.add_handler(CommandHandler("brief", ptb_brief))
+    app.add_handler(CommandHandler("morning", ptb_brief))
+    app.add_handler(CommandHandler("sparring", ptb_sparring))
     app.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), ptb_handle_text))
     app.add_handler(MessageHandler(filters.VOICE | filters.AUDIO, ptb_handle_voice))
     
@@ -1103,6 +1210,25 @@ def run_builtin_fallback():
                     elif text == "/sync":
                         send_tg_msg(chat_id, "🔄 *Menjalankan sinkronisasi multi-perangkat...*")
                         send_tg_msg(chat_id, format_bot_sync())
+                        continue
+                    elif text.startswith("/ask"):
+                        query = text[4:].strip()
+                        send_tg_msg(chat_id, "💡 *Menelusuri vault dan mensintesis jawaban...*")
+                        send_tg_msg(chat_id, format_bot_ask(query))
+                        continue
+                    elif lower_text.startswith(("tanya:", "ask:")):
+                        query = re.sub(r"^(?:tanya|ask):\s*", "", text, flags=re.IGNORECASE).strip()
+                        send_tg_msg(chat_id, "💡 *Menelusuri vault dan mensintesis jawaban...*")
+                        send_tg_msg(chat_id, format_bot_ask(query))
+                        continue
+                    elif text in ("/brief", "/morning", "/pulse", "/today"):
+                        send_tg_msg(chat_id, "🌅 *Menyiapkan Executive Morning Pulse...*")
+                        send_tg_msg(chat_id, format_bot_daily_brief())
+                        continue
+                    elif text.startswith("/sparring"):
+                        args = text[9:].strip()
+                        send_tg_msg(chat_id, "⚖️ *Menjalankan evaluasi strategic decision sparring...*")
+                        send_tg_msg(chat_id, format_bot_sparring(args))
                         continue
                         
                     res = process_incoming_text(text)
