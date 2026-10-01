@@ -38,3 +38,15 @@ wiki/synthesis_distributed-systems_evolutionary-biology.md
 perbaikan datamart pipeline untuk dapat mengetahui alasan debitur tidak masuk ke pipeline prewash
 
 ---
+
+### 2026-09-29 12:18:54
+habis meeting dengan mastercard terkait pengembangan revolving pinjaman mikro
+
+---
+
+### 2026-10-01 15:17:16
+perbaikan BRD untuk KTS:
+- Definisi Total Eksposure hanya mikro / Ritel tidak include Briguna
+- jarak antar restruk harus dibatasi
+
+---

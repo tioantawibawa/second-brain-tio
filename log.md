@@ -42,3 +42,5 @@ Catatan audit log kronologis untuk setiap tindakan:
 | 2026-09-28 09:00 | INGEST | `wiki/how-i-build-ai-projects-from-scratch.md` | Extracted from web_20260928_090009_how-i-build-ai-projects-from-scratch-3c9.md to wiki/ |
 | 2026-09-28 13:30 | INGEST | `wiki/triage-ekstraksi-konten-tiktok-zsbmfm6kn.md` | Extracted from web_20260928_133034_zsbmfm6kn.md to wiki/ |
 | 2026-09-28 21:28 | INGEST | `wiki/github---vllm-projectvllm-a-high-throughput-and-memory-efficient-inference-and-serving-engine-for-llms.md` | Extracted from web_20260928_212754_github---vllm-projectvllm-a-high-through.md to wiki/ |
+| 2026-09-30 06:53 | INGEST | `wiki/ingest-sesi-chatgpt-cx-6abc4f4ee040819180331aefb6238cf0.md` | Extracted from web_20260930_065255_cx-6abc4f4ee040819180331aefb6238cf0.md to wiki/ |
+| 2026-09-30 06:53 | INGEST | `wiki/ai-video-clipper-setup.md` | Extracted from web_20260930_065126_github---tioantawibawaai-video-clipper.md to wiki/ |
