@@ -50,3 +50,14 @@ perbaikan BRD untuk KTS:
 - jarak antar restruk harus dibatasi
 
 ---
+
+### 2026-10-01 15:30:47
+perbaikan BRD untuk KTS:
+setelah flag Y, tidak bisa N lagi di NPL_Methodenya
+
+---
+
+### 2026-10-04 23:31:59
+RSXQ-3S8Q
+
+---
