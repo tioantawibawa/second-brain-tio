@@ -35,3 +35,30 @@ tmp/
 data/*.db
 data/*.sqlite
 
+# Large raw archives & exports (unpacked or raw dumps)
+*.zip
+*.tar.gz
+*.tgz
+*.mbox
+raw/**/_tmp*
+
+# Node.js / Monorepo artifacts
+node_modules/
+dist/
+*.tsbuildinfo
+
+# Large audio/video binaries (>50MB prevention)
+*.mp4
+*.mov
+*.avi
+*.mkv
+*.wav
+*.iso
+
+# Credentials & SSH Keys
+*.pem
+*.key
+id_rsa*
+id_ed25519*
+
+
