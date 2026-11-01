@@ -45,3 +45,9 @@ Catatan audit log kronologis untuk setiap tindakan:
 | 2026-09-30 06:53 | INGEST | \wiki/ai-video-clipper-setup.md\ | Extracted from web_20260930_065126_github---tioantawibawaai-video-clipper.md to wiki/ |
 | 2026-10-29 00:44 | SYSTEM_ENHANCE | \CLAUDE.md\, \_tools/\ | LLM Wiki Architecture setup: 3-layer schema, domain subdirs, build_index, lint, and 3 converters |
 | 2026-10-29 00:44 | INGEST | \wiki/engineering/sources/tg-alert-anomali-latensi.md\ | First LLM Wiki Ingest: Telegram alert capture -> wiki/engineering/sources and topics |
+
+| 2026-11-01 21:34 | SYSTEM_ENHANCE | `tools/brain.py`, `HOME.md`, `QUICKSTART.md` | Local usability launcher, search, capture, status, doctor; existing notes preserved; 12 staging tests passed |
+
+| 2026-11-01 21:49 | SYSTEM_ENHANCE | `tools/execution.py`, `TASK_EXECUTION.md`, local skill | Two-agent idea-to-task and proposal workflow; review before implementation; 18 tests passed; no idea packet created in user vault |
+
+| 2026-11-01 22:17 | SYSTEM_REWRITE | `second_brain/`, `deploy/`, `docs/` | Python/Telegram v2; 44 fixture tests passed; code-only release allowlist; vault/config preserved; GitHub/VPS not changed |
