@@ -9,18 +9,87 @@ from .execution import prepare
 from .providers import AI, ProviderError
 from .storage import append_index, audit, read_note, safe_path, save_note, slug
 
-HELP = '''Second Brain v2
-Teks biasa: simpan ke inbox. Link: simpan URL dan catatan mentah (tanpa menjalankan isi halaman).
-Voice/audio: simpan audio dan coba transkripsi menggunakan provider yang dikonfigurasi.
-/capture <teks> · /journal <refleksi> · /crm <nama> - <konteks>
-/status · /list · /search <kata> · /read <path/nama>
-/ask <pertanyaan> · /brief
-/warroom <rencana> · /weave <A> x <B> · /sparring <A> vs <B>
-/weekly · /ingest
-/plan <ide>: paket Agen 1 → Agen 2 → review Tio, serta prompt Codex.
-/sync: status Git; /sync push hanya jika diaktifkan eksplisit pada VPS.
-/help
-Analisis AI memerlukan provider/model yang valid. Kegagalan tidak menghasilkan analisis fiktif.'''
+HELP = '''🧠 SECOND BRAIN — PANDUAN TIO
+Simpan ide, temukan kembali pengetahuan, lalu ubah ide menjadi rencana kerja.
+
+🚀 MULAI DARI SINI
+1. Simpan ide:
+/capture Ide membuat monitoring drift bulanan
+2. Cari kembali:
+/search drift
+3. Siapkan rencana dua agen:
+/plan Buat monitoring drift scoring bulanan
+
+📥 SIMPAN CATATAN
+• Teks biasa → catatan baru di inbox.
+• URL + catatan tambahan → sumber mentah untuk diproses.
+• Voice/audio → audio asli disimpan, lalu dicoba transkripsi.
+• Dokumen → file asli disimpan; Markdown dapat diproses lewat /ingest.
+
+/capture Catatan meeting hari ini
+Menyimpan teks tanpa analisis AI.
+
+/journal Refleksi pekerjaan minggu ini
+Menyimpan jurnal pribadi; dikecualikan dari pencarian default.
+
+/crm Budi - Rekan diskusi data engineering
+Menyimpan profil kontak dan konteks relasi.
+
+🔎 CARI & BACA
+/list
+Lihat 10 catatan terbaru beserta perintah untuk membacanya.
+
+/search scoring drift
+Cari kata pada isi catatan terbaru. Semua kata harus ditemukan dalam catatan yang sama; coba satu kata jika hasil kosong.
+
+/read nama-catatan
+Baca isi catatan. Gunakan path dari /list atau /search jika namanya mirip.
+
+/ask Apa strategi mitigasi drift yang ada di catatan saya?
+Jawaban AI berdasarkan sumber vault yang relevan.
+
+✅ DARI IDE MENJADI TASK
+/plan Buat dashboard monitoring portofolio
+Menyiapkan paket berisi brief, format tugas, proposal, dan prompt untuk disalin ke Codex.
+• Agen 1: pecah ide menjadi tugas, dependensi, dan kriteria selesai.
+• Agen 2: susun framework proposal, skill, serta prompt eksekusi.
+• Tio: review proposal sebelum implementasi.
+Agen mulai bekerja saat prompt dijalankan di Codex. Simpan/sinkronkan paket ke checkout Codex bila berasal dari VPS.
+
+📊 FOKUS & OLAH PENGETAHUAN
+/brief
+Ringkasan proyek aktif, tugas terbuka, dan jumlah inbox; tanpa AI. Urutan tampilan bukan peringkat prioritas.
+
+/ingest
+AI mengolah maksimal 10 sumber Markdown dari raw/inbox menjadi catatan terstruktur. Sumber asli diarsipkan.
+
+/weekly
+AI mereview catatan yang diperbarui dalam 7 hari terakhir: progres, hambatan, dan rekomendasi.
+
+🧩 UJI & HUBUNGKAN IDE
+/warroom Migrasi pipeline data ke platform baru
+Pre-mortem: skenario kegagalan, asumsi, dan mitigasi.
+
+/weave Credit risk x Behavioral economics
+Hubungkan dua domain dan cari transfer ilmu yang dapat dicoba.
+
+/sparring Streamlit vs React
+Bandingkan opsi, trade-off, dan kondisi pemilihan.
+
+⚙️ STATUS & SINKRONISASI
+/status
+Jumlah catatan, proyek aktif, tugas, dan inbox. Status ini tidak menguji koneksi AI atau GitHub.
+
+/sync
+Lihat status perubahan Git di VPS.
+
+/sync push
+Push commit yang sudah direview; perlu diaktifkan pada VPS dan working tree bersih. Bot tidak membuat commit otomatis.
+
+ℹ️ YANG PERLU DIKETAHUI
+Capture, cari, baca, brief, dan persiapan /plan dapat dipakai tanpa AI. Analisis AI dan transkripsi cloud memerlukan provider/model yang valid. URL disimpan sebagai sumber; isi halaman tidak dirangkum otomatis. Domain private dikecualikan dari konteks analisis AI.
+
+Ketik /help untuk membuka panduan ini kembali.'''
 
 
 class Commands:
