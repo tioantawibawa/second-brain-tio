@@ -1,107 +1,76 @@
-# Second Brain: Momentum & Deliverable-Driven Knowledge OS
+# Second Brain Tio — Python / Telegram v2
 
-> **Customized Knowledge Architecture for High-Concurrency Builders & AI Engineers.**  
-> Diselaraskan secara khusus untuk pola kerja *deliverable-first*, konkurensi tinggi (paralel kerja & side-project builder), visual rapi, dan orientasi eksekusi sampai tahap deployment.  
-> 📖 **[Baca Panduan Lengkap Operasional (MANUAL.md)](file:///C:/Users/tio/.gemini/antigravity/scratch/second-brain/MANUAL.md)** untuk petunjuk detail seluruh fitur dari HP ke VPS.
+Vault Markdown dengan satu runner Telegram, pencarian lokal, capture, analisis berbasis sumber, dan alur task dua agen. Core menggunakan Python 3.10+ standard library; tidak memerlukan npm atau paket pip tambahan.
 
----
+## Mulai dari Windows
 
-## 1. Arsitektur Kognitif
+Klik dua kali **brain.cmd** untuk menu, atau jalankan:
 
-Berbeda dengan model PARA tradisional yang pasif, sistem ini mengalirkan ide berdasarkan **momentum eksekusi**:
-
-```mermaid
-flowchart LR
-    A["inbox_raw/ (Raw Capture)"] -->|ingest.py + Gemini| B{"Triage Engine"}
-    B -->|Active Deliverable| C["in_motion/ (Execution)"]
-    B -->|Synthesis / Architecture| D["lattices/ (Knowledge Scaffolds)"]
-    C -.->|Triggers Tasks| E["system_triggers/ (Cadences & Automations)"]
-    D -.->|Underpins| C
-    C -->|Auto Indexer| F["INDEX.md (Network & Backlinks)"]
-    D -->|Auto Indexer| F
+```powershell
+.\brain.cmd status
+.\brain.cmd search "scoring drift"
+.\brain.cmd plan "Ide yang ingin saya kerjakan"
+.\brain.cmd home
+.\brain.cmd health
 ```
 
-| Direktori | Fungsi Utama | Karakteristik |
-| :--- | :--- | :--- |
-| `inbox_raw/` | Quick capture, voice notes, transkrip mentah, chat dump | Zero friction, append-only, dibersihkan setelah ingest |
-| `in_motion/core_work/` | Deliverables profesional, proyek enterprise, target klien | Milestones terukur, SLA, deliverables-first |
-| `in_motion/side_builder/` | Side-projects, eksperimen AI agents, riset SaaS | Cepat, iteratif, target: deploy atau live agent |
-| `lattices/mental_models/` | Kerangka analitis, prinsip sistem, mental models | Abadi, sintetis, modular |
-| `lattices/playbooks/` | Engineering SOP, checklist arsitektur, pattern teruji | Reusable blueprints & operational scripts |
-| `system_triggers/` | Template markdown, cadences mingguan, automation scripts | Engine yang menjaga momentum tetap bergerak |
+Buka `HOME.md` di Obsidian. Catatan lama tetap pada lokasinya. Domain private dikecualikan dari ringkasan/pencarian secara default.
 
----
-
-## 2. CLI Automation Suite
-
-Repositori ini dilengkapi dengan utilitas CLI bawaan Python Standard Library (zero mandatory pip dependencies) yang terintegrasi dengan Google Gemini AI untuk analisis cerdas.
-
-### A. Pipeline Ingest Catatan Mentah (`ingest.py`)
-Memproses file teks di `inbox_raw/`, mengekstrak **Core Insight**, **Key Entities** (sebagai `[[wikilinks]]`), **Action Items/Triggers**, lalu menghasilkan catatan Markdown siap pakai.
+## Telegram / VPS
 
 ```bash
-# Memproses satu catatan tertentu
-python scripts/ingest.py --file inbox_raw/draft-note.md
-
-# Memproses seluruh isi folder inbox_raw secara otomatis
-python scripts/ingest.py --all
-
-# Mode dry-run (tampilkan hasil di terminal tanpa menulis file)
-python scripts/ingest.py --file inbox_raw/draft-note.md --dry-run
+python3 -m second_brain --version
+python3 -m second_brain bot --check  # validasi konfigurasi lokal saja
+python3 -m second_brain bot          # mulai polling Telegram
 ```
 
-*Tersedia juga helper script one-liner:*
-- Linux/VPS: `./scripts/process_dump.sh`
-- Windows: `.\scripts\process_dump.ps1`
+Isi `.env` di VPS memakai `.env.example` sebagai acuan; pertahankan kredensial lama yang masih valid. Tentukan model Gemini/Groq yang benar-benar tersedia pada akun. Analisis cloud memerlukan key/model yang valid; kegagalan provider dilaporkan, tidak diganti dengan kesimpulan buatan.
 
-### C. Telegram Ingest Gateway (`telegram_bot.py`)
-Bot Telegram mandiri (Pure Python Standard Library, tanpa framework bot berat) yang memungkinkan Anda menangkap ide secara instan dari smartphone ke VPS:
-- **Text Dump**: Kirim pesan teks mentah atau chat forward -> otomatis di-ingest & diklasifikasikan ke `in_motion/` atau `lattices/`.
-- **Voice Note (VN) Dump**: Kirim rekaman suara (VN) langsung dari Telegram. Audio otomatis dikirim ke **Gemini 3.8 Flash Multimodal API** untuk ditranskripsikan secara presisi dan diubah menjadi dokumen Markdown berstandar eksekutif lengkap dengan *action triggers*.
-- **Pencarian Cepat**: Ketik `/search <kata_kunci>` di chat Telegram untuk mencari catatan via algoritma BM25.
-- **Statistik Vault**: Ketik `/status` untuk melihat ringkasan deliverable dan backlog.
+| Kebutuhan | Perintah |
+| --- | --- |
+| Capture / catatan | teks biasa, URL, voice/audio/dokumen, `/capture`, `/journal`, `/crm` |
+| Temukan kembali | `/list`, `/search`, `/read`, `/ask` |
+| Fokus dan analisis | `/brief`, `/weekly`, `/warroom`, `/weave`, `/sparring`, `/ingest` |
+| Dua agen | `/plan <ide>` menyiapkan prompt Agen 1 → Agen 2 → review Tio |
+| Operasional | `/status`, `/sync` (status Git), `/sync push` (push eksplisit jika diaktifkan) |
+
+`/plan` menyiapkan paket; kedua agen dijalankan saat prompt ditempel ke Codex. Implementasi menunggu review proposal. Jika paket berasal dari VPS, sinkronkan paket yang dipilih ke checkout Codex sebelum menjalankan prompt secara lokal.
+
+## Struktur kode
+
+```text
+second_brain/
+  config.py       .env dan validasi tanpa efek samping saat import
+  vault.py        pembacaan Markdown, pencarian, task, HOME
+  storage.py      path, penulisan catatan, provenance dan audit
+  execution.py    paket ide dan prompt dua agen
+  providers.py    Gemini/Groq text dan Groq/OpenAI/Gemini audio
+  analysis.py     Q&A, sintesis, ingest, dan audit mingguan
+  commands.py     routing perintah yang dapat diuji tanpa Telegram
+  transport.py    request Telegram dan pemotongan pesan
+  state.py        ledger update dan offset SQLite
+  bot.py          satu runner polling dan pengamanan duplikasi
+  cli.py          CLI lintas Windows/Linux
+deploy/           unit systemd, update, rollback, daftar file kode
+tests/            pengujian lokal tanpa kredensial/API live
+```
+
+Entry point lama `services/telegram_ingest_bot.py`, `scripts/telegram_bot.py`, dan `tools/brain.py` tetap berfungsi sebagai wrapper ke package baru. Skrip riset/konverter lama di `tools/`, `_tools/`, dan `scripts/ingest.py` tetap tersedia secara terpisah untuk kompatibilitas; tidak semuanya ditulis ulang. Pencarian hybrid lama tetap bisa dipakai dengan `tools/search.py`; neural embeddings opsional lewat `requirements-legacy.txt`.
+
+Runner baru menyimpan update ID sebelum melakukan efek samping. Pesan yang selesai atau hasilnya tidak pasti tidak diproses ulang otomatis setelah restart. `python -m second_brain health` menampilkan hitungan `processing`/`uncertain` untuk rekonsiliasi manual. Ini mengurangi duplikasi; bukan jaminan pengiriman persis satu kali pada jaringan terputus.
+
+## Panduan
+
+- [Push kode dan migrasi VPS](docs/DEPLOYMENT.md)
+- [Perubahan perilaku dan kompatibilitas](docs/MIGRATION_V2.md)
+- [Task eksekusi dua agen](TASK_EXECUTION.md)
+- [Penggunaan lokal singkat](QUICKSTART.md)
+
+Pengujian:
 
 ```bash
-# Menjalankan bot secara interaktif
-python3 scripts/telegram_bot.py
-
-# Atau jalankan sebagai systemd service di background (24/7)
-sudo cp systemd/second-brain-bot.service /etc/systemd/system/
-sudo systemctl daemon-reload
-sudo systemctl enable --now second-brain-bot
+python -m unittest discover -s tests -p 'test_*.py' -v
+python -m compileall -q second_brain services tools scripts _tools
 ```
 
----
-
-## 3. Integrasi Obsidian & Neovim
-
-### Obsidian
-1. Buka Obsidian -> **Open folder as vault** -> pilih folder repositori ini.
-2. Aktifkan fitur inti: **Graph View**, **Backlinks**, dan **Outgoing Links**.
-3. Rekomendasi Community Plugins:
-   - `Dataview`: Kueri status catatan otomatis berdasarkan YAML frontmatter.
-   - `Omnisearch`: Pencarian teks mendalam.
-
-### Neovim
-1. Kompatibel dengan plugin Markdown modern:
-   - `epwalsh/obsidian.nvim`
-   - `renerocksai/telekasten.nvim`
-   - `nvim-telescope/telescope.nvim`
-2. Konfigurasi `obsidian.nvim` contoh:
-   ```lua
-   require("obsidian").setup({
-     workspaces = {
-       {
-         name = "second-brain",
-         path = "~/second-brain",
-       },
-     },
-     wiki_link_func = "use_alias_only",
-   })
-   ```
-
----
-
-## 4. Aturan & Governance
-
-Lihat [RULES.md](file:///C:/Users/tio/.gemini/antigravity/scratch/second-brain/RULES.md) untuk detail lengkap mengenai skema frontmatter, konvensi penamaan file, dan standarisasi visual.
+CI disiapkan untuk Windows/Linux dan Python 3.10/3.12. Kelulusan lokal tidak membuktikan CI, Telegram, provider AI, atau deployment VPS sudah berjalan.

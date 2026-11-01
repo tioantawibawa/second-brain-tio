@@ -61,4 +61,13 @@ dist/
 id_rsa*
 id_ed25519*
 
+# v2 runtime data and local/private material
+data/*-state.sqlite*
+data/*.lock
+*.egg-info/
+build/
+.coverage
+wiki/private/**
+raw/audio_dumps/
+
 

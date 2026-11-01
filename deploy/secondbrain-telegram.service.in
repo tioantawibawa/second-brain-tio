@@ -1,0 +1,24 @@
+[Unit]
+Description=Second Brain v2 Telegram gateway
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+User=@RUN_USER@
+WorkingDirectory=@REPO_DIR@
+EnvironmentFile=@REPO_DIR@/.env
+Environment=PYTHONUNBUFFERED=1
+Environment=TZ=Asia/Jakarta
+ExecStart=@REPO_DIR@/.venv/bin/python -m second_brain bot
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=180
+NoNewPrivileges=true
+PrivateTmp=true
+UMask=0077
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
