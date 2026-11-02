@@ -24,7 +24,8 @@ def prepare(root, idea, title=None, domain='work'):
         ('brief', '00-brief'), ('tasks', '01-tasks'), ('proposal', '02-proposal'),
         ('prompt', '03-codex-prompt'), ('execute', '04-execution-prompt'))}
     paths = {key: base / name for key, name in names.items()}
-    skill = root / '.agents/skills/second-brain-execution/SKILL.md'
+    skill_root = next((candidate for candidate in (root, *root.parents) if (candidate / '.agents/skills/second-brain-execution/SKILL.md').is_file()), root)
+    skill = skill_root / '.agents/skills/second-brain-execution/SKILL.md'
     prompt = f'''Gunakan skill second-brain-execution. Baca file skill secara eksplisit:
 {skill}
 

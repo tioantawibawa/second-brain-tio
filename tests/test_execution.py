@@ -53,13 +53,14 @@ class ExecutionTests(unittest.TestCase):
         self.assertEqual(list(self.root.iterdir()), [])
 
     def test_cli_creates_packet_home_and_copyable_prompt(self):
-        result = subprocess.run([sys.executable, str(TOOLS / 'brain.py'), '--vault', str(self.root), 'plan', 'Ide uji', '--domain', 'engineering'], capture_output=True, text=True, encoding='utf-8')
+        result = subprocess.run([sys.executable, str(TOOLS / 'brain.py'), '--vault', str(self.root), 'plan', 'Ide uji'], capture_output=True, text=True, encoding='utf-8')
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertIn('Agen belum dijalankan', result.stdout)
-        self.assertIn('Gunakan skill second-brain-execution', result.stdout)
-        home = (self.root / 'HOME.md').read_text(encoding='utf-8')
-        self.assertIn('wiki/engineering/projects/', home)
-        self.assertIn('review: pending', home)
+        self.assertIn('AI belum dijalankan', result.stdout)
+        import sqlite3
+        from contextlib import closing
+        with closing(sqlite3.connect(self.root / 'data/workspace.sqlite')) as db:
+            self.assertEqual(db.execute('SELECT state FROM plans').fetchone()[0], 'draft')
+        self.assertEqual(len(list((self.root / 'wiki/work/projects').glob('*.md'))), 1)
 
     def test_cli_private_packet_excluded_from_home(self):
         result = subprocess.run([sys.executable, str(TOOLS / 'brain.py'), '--vault', str(self.root), 'plan', 'Jangan bocorkan ini', '--domain', 'private'], capture_output=True, text=True, encoding='utf-8')

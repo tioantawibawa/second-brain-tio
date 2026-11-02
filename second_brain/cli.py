@@ -1,5 +1,6 @@
 """Cross-platform command line interface."""
 import argparse
+import json
 from pathlib import Path
 import sys
 from .vault import ROOT, home, capture, doctor, search, show_status, show_results
@@ -64,6 +65,7 @@ def main(argv=None):
     planner.add_argument('--file', type=Path, help='Baca ide dari file UTF-8')
     planner.add_argument('--title')
     planner.add_argument('--domain', choices=['work', 'engineering', 'private'], default='work')
+    planner.add_argument('--legacy-packet', action='store_true', help='Compatibilitas: buat paket Markdown lima file')
     commands.add_parser('home', help='Perbarui HOME.md untuk Obsidian')
     commands.add_parser('doctor', help='Pemeriksaan lokal baca saja')
     commands.add_parser('health', help='Pemeriksaan konfigurasi lokal tanpa koneksi jaringan')
@@ -74,19 +76,54 @@ def main(argv=None):
     for operation in ('ask', 'brief', 'weave', 'warroom', 'sparring', 'weekly', 'ingest'):
         command = commands.add_parser(operation, help=f'Jalankan {operation} melalui service yang sama dengan Telegram')
         command.add_argument('text', nargs='*')
+    for operation in ('tasks', 'task', 'done', 'plans', 'proposal', 'planrun', 'approve', 'revise', 'prompt'):
+        command = commands.add_parser(operation, help=f'Workspace v3: {operation}')
+        command.add_argument('text', nargs='*')
+    dashboard = commands.add_parser('serve', help='Dashboard lokal di browser')
+    dashboard.add_argument('--port', type=int, default=8765)
+    dashboard.add_argument('--no-open', action='store_true')
+    reset = commands.add_parser('reset', help='Arsipkan workspace aktif dan mulai bersih')
+    reset.add_argument('--archive', action='store_true', required=True, help='Wajib: verifikasi arsip sebelum reset')
+    reset.add_argument('--source', type=Path, help='Opsional: arsipkan workspace dari checkout lama sebelum mulai bersih')
+    commands.add_parser('archives', help='Daftar snapshot arsip')
+    restore = commands.add_parser('restore', help='Pulihkan arsip ke workspace baru')
+    restore.add_argument('identifier')
     args = parser.parse_args(argv)
-    root = args.vault.resolve()
-    if not root.is_dir():
+    project = args.vault.resolve()
+    if not project.is_dir():
         parser.error('Folder vault tidak ditemukan.')
     try:
-        if args.command in (None, 'menu'):
+        from .config import Settings
+        settings = Settings.load(project)
+        root = settings.root
+        if args.command in (None, 'serve'):
+            from .dashboard import run
+            return run(settings, args.port if args.command else 8765, not args.no_open if args.command else True)
+        if args.command == 'menu':
             return menu(root)
-        if args.command == 'status':
-            show_status(root, args.include_private)
+        if args.command == 'reset':
+            from .workspace import reset
+            print(json.dumps(reset(project, args.source), ensure_ascii=False, indent=2))
+        elif args.command == 'archives':
+            from .workspace import archives
+            print(json.dumps(archives(project), ensure_ascii=False, indent=2))
+        elif args.command == 'restore':
+            from .workspace import restore
+            print('Workspace dipulihkan:', restore(project, args.identifier))
+        elif args.command == 'status':
+            if args.include_private:
+                show_status(root, True)
+            else:
+                from .controller import Commands
+                print(Commands(settings).dispatch('/status'))
         elif args.command == 'search':
             if not 1 <= args.limit <= 100:
                 parser.error('--limit harus antara 1 dan 100.')
-            results = search(root, args.query, args.include_private, args.limit)
+            if args.include_private:
+                results = search(root, args.query, True, args.limit)
+            else:
+                from .search_index import search as indexed_search
+                results = indexed_search(root, args.query, args.limit)
             print(json.dumps(results, ensure_ascii=False, indent=2)) if args.json else show_results(results)
         elif args.command == 'capture':
             if (args.text is None) == (args.file is None):
@@ -97,16 +134,19 @@ def main(argv=None):
         elif args.command == 'plan':
             if (args.idea is None) == (args.file is None):
                 parser.error('Pilih ide atau --file, tepat salah satu.')
-            create_plan(root, args.file.read_text(encoding='utf-8-sig') if args.file else args.idea, args.title, args.domain)
+            idea = args.file.read_text(encoding='utf-8-sig') if args.file else args.idea
+            if args.legacy_packet or args.domain != 'work':
+                create_plan(root, idea, args.title, args.domain)
+            else:
+                from .controller import Commands
+                print(Commands(settings).dispatch('/plan ' + idea))
         elif args.command == 'doctor':
             doctor(root)
-        elif args.command in ('ask', 'brief', 'weave', 'warroom', 'sparring', 'weekly', 'ingest'):
+        elif args.command in ('ask', 'brief', 'weave', 'warroom', 'sparring', 'weekly', 'ingest', 'tasks', 'task', 'done', 'plans', 'proposal', 'planrun', 'approve', 'revise', 'prompt'):
             from .commands import Commands
-            from .config import Settings
-            print(Commands(Settings.load(root)).dispatch('/' + args.command + ' ' + ' '.join(args.text)))
+            print(Commands(settings).dispatch('/' + args.command + ' ' + ' '.join(args.text)))
         elif args.command in ('bot', 'health', 'sync'):
             from .config import Settings
-            settings = Settings.load(root)
             if args.command == 'bot':
                 settings.validate_bot()
                 if args.check:
@@ -118,11 +158,12 @@ def main(argv=None):
                     run(settings)
             elif args.command == 'sync':
                 from .sync import sync
-                print(sync(settings, args.push))
+                from dataclasses import replace
+                print(sync(replace(settings, root=project), args.push))
             else:
                 doctor(root)
                 print('Health: modul core berhasil dimuat. Untuk validasi konfigurasi bot gunakan bot --check.')
-                database = root / 'data/telegram-state.sqlite'
+                database = project / 'data/telegram-state.sqlite'
                 if database.exists():
                     import sqlite3
                     with sqlite3.connect(f'{database.as_uri()}?mode=ro', uri=True) as connection:

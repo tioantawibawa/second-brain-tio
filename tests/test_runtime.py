@@ -231,8 +231,11 @@ class RuntimeTests(unittest.TestCase):
 
     def test_plan_prompt_supports_vps_to_local_checkout(self):
         reply = Commands(self.settings).dispatch('/plan Test idea')
-        self.assertIn('checkout lokal', reply)
-        self.assertIn('path relatif wiki/work/projects/', reply)
+        identifier = Commands(self.settings).hub.plans()[0]['id']
+        prompt = Commands(self.settings).dispatch('/prompt ' + identifier)
+        self.assertIn('checkout lokal', prompt)
+        self.assertIn('wiki', prompt)
+        self.assertIn('AI belum dijalankan', reply)
 
     def test_sync_default_only_status_and_disabled_push_never_stages(self):
         with patch('second_brain.sync.git', return_value=' M file') as git:

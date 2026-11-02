@@ -2,10 +2,10 @@
 # Run manually on the VPS after reviewing/pushing the rewrite.
 set -euo pipefail
 if [[ $# -lt 1 || $# -gt 2 ]]; then
-  echo 'Usage: bash deploy/update_vps.sh /absolute/path/to/second-brain [secondbrain-telegram]'; exit 2
+  echo 'Usage: bash deploy/update_vps.sh /absolute/path/to/second-brain [second-brain-bot]'; exit 2
 fi
 repo=$(cd "$1" && pwd -P)
-service=${2:-secondbrain-telegram}
+service=${2:-second-brain-bot}
 [[ "$repo" =~ ^/[a-zA-Z0-9._/-]+$ && "$service" =~ ^[a-zA-Z0-9_-]+$ ]] || { echo 'Invalid repo path/service name'; exit 2; }
 cd "$repo"
 [[ "$(git rev-parse --show-toplevel)" == "$repo" ]] || { echo 'Must use the repository root'; exit 1; }
@@ -34,9 +34,9 @@ printf '%s\n' "$was_active" > "$backup/was-active"
 trap 'echo "Deployment failed. Backup: $backup. Service may be stopped; follow docs/DEPLOYMENT.md rollback instructions. No vault reset was performed."' ERR
 if systemctl cat "$service" >/dev/null 2>&1; then sudo systemctl stop "$service"; fi
 # Snapshot code and all vault/state data after the writer stops.
-tar -czf "$backup/code-before.tgz" --exclude='./.git' --exclude='./.env' --exclude='./.venv' --exclude='./node_modules' --exclude='./tmp' --exclude='./raw' --exclude='./inbox_raw' --exclude='./wiki' --exclude='./journal' --exclude='./crm' --exclude='./in_motion' --exclude='./lattices' --exclude='./system_triggers' --exclude='./data' --exclude='./.obsidian' --exclude='./index.md' --exclude='./INDEX.md' --exclude='./log.md' --exclude='./HOME.md' --exclude='./Untitled*' -C "$repo" .
+tar -czf "$backup/code-before.tgz" --exclude='./.git' --exclude='./.env' --exclude='./.venv' --exclude='./node_modules' --exclude='./tmp' --exclude='./.brain' --exclude='./raw' --exclude='./inbox_raw' --exclude='./wiki' --exclude='./journal' --exclude='./crm' --exclude='./in_motion' --exclude='./lattices' --exclude='./system_triggers' --exclude='./data' --exclude='./.obsidian' --exclude='./index.md' --exclude='./INDEX.md' --exclude='./log.md' --exclude='./HOME.md' --exclude='./Untitled*' -C "$repo" .
 folders=()
-for folder in raw inbox_raw wiki journal crm in_motion lattices system_triggers data .obsidian; do
+for folder in raw inbox_raw wiki journal crm in_motion lattices system_triggers data .obsidian .brain; do
   [[ ! -d "$folder" ]] || folders+=("$folder")
 done
 for file in index.md INDEX.md log.md HOME.md Untitled*.base Untitled*.canvas; do

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "second-brain-tio"
-version = "2.0.0"
+version = "3.0.0"
 description = "Markdown Second Brain with one modular Telegram runner and two-agent planning"
 requires-python = ">=3.10"
 dependencies = []
@@ -14,3 +14,6 @@ second-brain = "second_brain.cli:main"
 
 [tool.setuptools.packages.find]
 include = ["second_brain*"]
+
+[tool.setuptools.package-data]
+second_brain = ["web/*"]

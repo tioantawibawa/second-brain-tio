@@ -16,7 +16,7 @@ class DeploymentBackupTests(unittest.TestCase):
             root = Path(folder)
             repo, backup = root / 'repo', root / 'backup'
             backup.mkdir()
-            for name in ('second_brain/bot.py', 'README.md', 'index.md', 'log.md', 'HOME.md', 'wiki/topic.md', 'system_triggers/cadences/weekly.md', '.env', 'Untitled.base'):
+            for name in ('second_brain/bot.py', 'README.md', 'index.md', 'log.md', 'HOME.md', 'wiki/topic.md', 'system_triggers/cadences/weekly.md', '.env', 'Untitled.base', '.brain/workspaces/private.md'):
                 target = repo / name
                 target.parent.mkdir(parents=True, exist_ok=True)
                 target.write_text('fixture', encoding='utf-8')
@@ -31,7 +31,7 @@ class DeploymentBackupTests(unittest.TestCase):
                 files = {name.removeprefix('./') for name in archive.getnames()}
             self.assertIn('second_brain/bot.py', files)
             self.assertIn('README.md', files)
-            for name in ('index.md', 'log.md', 'HOME.md', 'wiki/topic.md', 'system_triggers/cadences/weekly.md', '.env', 'Untitled.base'):
+            for name in ('index.md', 'log.md', 'HOME.md', 'wiki/topic.md', 'system_triggers/cadences/weekly.md', '.env', 'Untitled.base', '.brain/workspaces/private.md'):
                 self.assertNotIn(name, files)
 
 

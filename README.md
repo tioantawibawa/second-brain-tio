@@ -1,76 +1,64 @@
-# Second Brain Tio — Python / Telegram v2
+# Second Brain Tio — v3
 
-Vault Markdown dengan satu runner Telegram, pencarian lokal, capture, analisis berbasis sumber, dan alur task dua agen. Core menggunakan Python 3.10+ standard library; tidak memerlukan npm atau paket pip tambahan.
+Telegram bertombol dan dashboard lokal untuk capture, pencarian, tugas, dan proposal dua agen. Workspace aktif terpisah dari kode aplikasi. Core memakai Python 3.10+ standard library; tidak perlu npm atau dependency pip tambahan.
 
-## Mulai dari Windows
+## Buka aplikasi
 
-Klik dua kali **brain.cmd** untuk menu, atau jalankan:
+Di Windows, klik dua kali **brain.cmd**. Dashboard membuka halaman Hari Ini dengan capture, inbox, tugas, dan pintasan proposal. Terminal tetap terbuka selama aplikasi dipakai.
 
 ```powershell
+.\brain.cmd serve
 .\brain.cmd status
-.\brain.cmd search "scoring drift"
-.\brain.cmd plan "Ide yang ingin saya kerjakan"
-.\brain.cmd home
-.\brain.cmd health
+.\brain.cmd task "Tinjau input laporan mingguan"
+.\brain.cmd plan "Buat ringkasan mingguan satu halaman"
 ```
 
-Buka `HOME.md` di Obsidian. Catatan lama tetap pada lokasinya. Domain private dikecualikan dari ringkasan/pencarian secara default.
+Telegram: kirim **/start** untuk menampilkan menu Beranda, Catat, Cari, Tugas, Rencanakan, Inbox, Pengetahuan, dan Sistem. Kirim **/cancel** jika ingin membatalkan input yang sedang ditunggu bot.
 
-## Telegram / VPS
+## Satu alur yang jelas
 
-```bash
-python3 -m second_brain --version
-python3 -m second_brain bot --check  # validasi konfigurasi lokal saja
-python3 -m second_brain bot          # mulai polling Telegram
+1. **Tangkap** — teks, URL, audio, atau dokumen masuk sebagai sumber/catatan.
+2. **Temukan** — pencarian full-text lokal mengikuti catatan terbaru; tidak harus cocok seluruh kata.
+3. **Rencanakan** — ide disimpan sebagai draft. Pilih Analisis dua agen untuk memakai provider AI.
+4. **Review** — Agen 1 menyusun tugas/dependensi/kriteria selesai. Agen 2 menyusun framework proposal, scope, risiko, dan pertanyaan keputusan.
+5. **Putuskan** — revisi atau setujui versi yang tepat. Persetujuan mengaktifkan tugas; implementasi belum berjalan otomatis.
+6. **Kerjakan** — tandai task selesai, atau salin Prompt Codex beserta dokumen proposal untuk implementasi setelah persetujuan scope di chat.
+
+Analisis dua agen adalah dua role model yang berjalan berurutan di aplikasi. Ini berbeda dari Codex subagents yang dapat dijalankan dari prompt eksternal. Draft, tugas, capture, dan pencarian tidak memerlukan AI; analisis/transkripsi cloud perlu key/model yang valid pada `.env`.
+
+## Reset tanpa kehilangan catatan
+
+```powershell
+.\brain.cmd reset --archive
+.\brain.cmd archives
+.\brain.cmd restore ID_ARSIP
 ```
 
-Isi `.env` di VPS memakai `.env.example` sebagai acuan; pertahankan kredensial lama yang masih valid. Tentukan model Gemini/Groq yang benar-benar tersedia pada akun. Analisis cloud memerlukan key/model yang valid; kegagalan provider dilaporkan, tidak diganti dengan kesimpulan buatan.
-
-| Kebutuhan | Perintah |
-| --- | --- |
-| Capture / catatan | teks biasa, URL, voice/audio/dokumen, `/capture`, `/journal`, `/crm` |
-| Temukan kembali | `/list`, `/search`, `/read`, `/ask` |
-| Fokus dan analisis | `/brief`, `/weekly`, `/warroom`, `/weave`, `/sparring`, `/ingest` |
-| Dua agen | `/plan <ide>` menyiapkan prompt Agen 1 → Agen 2 → review Tio |
-| Operasional | `/status`, `/sync` (status Git), `/sync push` (push eksplisit jika diaktifkan) |
-
-`/plan` menyiapkan paket; kedua agen dijalankan saat prompt ditempel ke Codex. Implementasi menunggu review proposal. Jika paket berasal dari VPS, sinkronkan paket yang dipilih ke checkout Codex sebelum menjalankan prompt secara lokal.
-
-## Struktur kode
+Hentikan bot/dashboard sebelum reset/restore. Reset memverifikasi snapshot lalu memilih workspace kosong; tidak menghapus file lama. Restore membuat workspace baru dan mempertahankan workspace yang ditinggalkan.
 
 ```text
-second_brain/
-  config.py       .env dan validasi tanpa efek samping saat import
-  vault.py        pembacaan Markdown, pencarian, task, HOME
-  storage.py      path, penulisan catatan, provenance dan audit
-  execution.py    paket ide dan prompt dua agen
-  providers.py    Gemini/Groq text dan Groq/OpenAI/Gemini audio
-  analysis.py     Q&A, sintesis, ingest, dan audit mingguan
-  commands.py     routing perintah yang dapat diuji tanpa Telegram
-  transport.py    request Telegram dan pemotongan pesan
-  state.py        ledger update dan offset SQLite
-  bot.py          satu runner polling dan pengamanan duplikasi
-  cli.py          CLI lintas Windows/Linux
-deploy/           unit systemd, update, rollback, daftar file kode
-tests/            pengujian lokal tanpa kredensial/API live
+.brain/
+  active.json             workspace yang sedang dipakai
+  workspaces/<id>/        Markdown, task/proposal SQLite, indeks pencarian
+  archives/<id>/          snapshot konten lama dan manifest hash
+data/telegram-state.sqlite ledger update Telegram, tidak direset
 ```
 
-Entry point lama `services/telegram_ingest_bot.py`, `scripts/telegram_bot.py`, dan `tools/brain.py` tetap berfungsi sebagai wrapper ke package baru. Skrip riset/konverter lama di `tools/`, `_tools/`, dan `scripts/ingest.py` tetap tersedia secara terpisah untuk kompatibilitas; tidak semuanya ditulis ulang. Pencarian hybrid lama tetap bisa dipakai dengan `tools/search.py`; neural embeddings opsional lewat `requirements-legacy.txt`.
+`.brain` diabaikan Git. Capture dan task tidak lagi mengubah catatan/log legacy yang tracked pada root. Catatan root lama tetap utuh sebagai konten legacy; tool lama yang dijalankan langsung mungkin masih membacanya. Untuk Obsidian, buka folder workspace aktif sebagai vault terpisah jika ingin melihat konten v3.
 
-Runner baru menyimpan update ID sebelum melakukan efek samping. Pesan yang selesai atau hasilnya tidak pasti tidak diproses ulang otomatis setelah restart. `python -m second_brain health` menampilkan hitungan `processing`/`uncertain` untuk rekonsiliasi manual. Ini mengurangi duplikasi; bukan jaminan pengiriman persis satu kali pada jaringan terputus.
+## VPS dan data lintas komputer
 
-## Panduan
+Service Tio: **second-brain-bot**. Entry point lama tetap menjadi wrapper ke runner baru. Tidak ada push, penghapusan ledger, atau reset VPS otomatis dari reset lokal.
 
-- [Push kode dan migrasi VPS](docs/DEPLOYMENT.md)
-- [Perubahan perilaku dan kompatibilitas](docs/MIGRATION_V2.md)
-- [Task eksekusi dua agen](TASK_EXECUTION.md)
-- [Penggunaan lokal singkat](QUICKSTART.md)
+Dashboard Windows memakai workspace Windows. Agar melihat data Telegram di VPS, jalankan dashboard pada VPS dan gunakan SSH tunnel. Tidak ada sinkronisasi database otomatis antar-komputer.
 
-Pengujian:
+Panduan: [Deployment v3](docs/DEPLOYMENT_V3.md), [perubahan v3](docs/MIGRATION_V3.md), [task dua agen](TASK_EXECUTION.md), [mulai cepat](QUICKSTART.md).
+
+## Pengujian
 
 ```bash
 python -m unittest discover -s tests -p 'test_*.py' -v
-python -m compileall -q second_brain services tools scripts _tools
+python -m compileall -q second_brain
 ```
 
-CI disiapkan untuk Windows/Linux dan Python 3.10/3.12. Kelulusan lokal tidak membuktikan CI, Telegram, provider AI, atau deployment VPS sudah berjalan.
+Tes memakai data sementara dan provider mock, bukan akun Telegram/AI live. CI Windows/Linux tersedia. Status service atau konfigurasi key saja tidak membuktikan interaksi live sudah berhasil.

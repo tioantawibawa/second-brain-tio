@@ -47,8 +47,13 @@ class Telegram:
         return data['result']
 
     def send(self, chat_id, text):
-        for chunk in chunks(text or '(kosong)'):
-            self.call('sendMessage', {'chat_id': chat_id, 'text': chunk})
+        pieces = list(chunks(text or '(kosong)'))
+        for index, chunk in enumerate(pieces):
+            payload = {'chat_id': chat_id, 'text': chunk}
+            markup = getattr(text, 'markup', None)
+            if markup and index == len(pieces) - 1:
+                payload['reply_markup'] = markup
+            self.call('sendMessage', payload)
 
     def download(self, file_id):
         item = self.call('getFile', {'file_id': file_id})

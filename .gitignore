@@ -69,5 +69,6 @@ build/
 .coverage
 wiki/private/**
 raw/audio_dumps/
+.brain/
 
 

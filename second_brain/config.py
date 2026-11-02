@@ -29,6 +29,11 @@ class Settings:
     include_private: bool = False
     max_download: int = 20 * 1024 * 1024
     env: dict = field(default_factory=dict, repr=False)
+    project_root: Path | None = None
+
+    @property
+    def project(self):
+        return self.project_root or self.root
 
     @classmethod
     def load(cls, root, environ=None):
@@ -36,14 +41,15 @@ class Settings:
         values = read_env(root / '.env')
         values.update(os.environ if environ is None else environ)
         try:
-            user = int(values.get('TELEGRAM_ALLOWED_USER_ID', '0'))
+            user = int(values.get('TELEGRAM_ALLOWED_USER_ID', '0') or '0')
             limit = int(values.get('SECOND_BRAIN_MAX_DOWNLOAD_MB', '20'))
         except ValueError:
             raise ValueError('User ID dan batas download harus berupa angka.') from None
         if not 1 <= limit <= 20:
             raise ValueError('SECOND_BRAIN_MAX_DOWNLOAD_MB harus 1–20.')
-        return cls(root, values.get('TELEGRAM_BOT_TOKEN', '').strip(), user,
-                   values.get('SECOND_BRAIN_INCLUDE_PRIVATE', '0') == '1', limit * 1024 * 1024, values)
+        from .workspace import active_root
+        return cls(active_root(root), values.get('TELEGRAM_BOT_TOKEN', '').strip(), user,
+                   values.get('SECOND_BRAIN_INCLUDE_PRIVATE', '0') == '1', limit * 1024 * 1024, values, root)
 
     def validate_bot(self):
         if not re.fullmatch(r'\d+:[A-Za-z0-9_-]+', self.token) or self.allowed_user <= 0:
