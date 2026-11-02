@@ -63,3 +63,6 @@ tests/test_v3_callbacks.py
 tools/brain.py
 tools/execution.py
 docs/VPS_UPDATE_V3.md
+deploy/replace_vps.py
+tests/test_inplace_replace.py
+docs/REPLACE_VPS_IN_PLACE.md

@@ -1,5 +1,5 @@
 [Unit]
-Description=Second Brain v2 Telegram gateway
+Description=Second Brain Telegram gateway
 Wants=network-online.target
 After=network-online.target
 

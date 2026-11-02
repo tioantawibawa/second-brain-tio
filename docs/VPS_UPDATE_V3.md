@@ -1,3 +1,5 @@
+> Untuk mengganti kode langsung di /home/ubuntu/second-brain, ikuti [panduan in-place](REPLACE_VPS_IN_PLACE.md). Panduan di bawah adalah alternatif checkout baru.
+
 # Memperbarui Second Brain di VPS ke v3
 
 Target: `tioantawibawa/second-brain-tio`, branch `main`. Service yang sudah ada: **second-brain-bot**. Checkout lama: **/home/ubuntu/second-brain**.

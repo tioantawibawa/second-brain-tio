@@ -1,5 +1,5 @@
 # Deployment Second Brain v3
 
-Panduan aktif: [DEPLOYMENT_V3.md](DEPLOYMENT_V3.md).
+Panduan utama untuk mengganti kode di folder VPS yang sama: [REPLACE_VPS_IN_PLACE.md](REPLACE_VPS_IN_PLACE.md).
 
-Instruksi v2 disimpan di [DEPLOYMENT_V2.md](DEPLOYMENT_V2.md) untuk referensi rollback. Service VPS Tio adalah `second-brain-bot`.
+Alternatif checkout baru: [DEPLOYMENT_V3.md](DEPLOYMENT_V3.md). Instruksi historis: [DEPLOYMENT_V2.md](DEPLOYMENT_V2.md). Service VPS Tio: second-brain-bot.
